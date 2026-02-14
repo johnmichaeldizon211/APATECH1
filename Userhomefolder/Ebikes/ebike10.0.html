@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecodrive - E-CAB 1000</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="ebike10.css">
+</head>
+<body>
+    <div class="bg-shape bg-left"></div>
+    <div class="bg-shape bg-right"></div>
+
+    <nav class="navbar">
+        <div class="logo">ECODRIVE</div>
+
+        <div class="nav-right">
+                        <ul class="nav-links">
+                <li><a href="../userhome.html">Home</a></li>
+                <li><a href="../bookings/bookings.html">Bookings</a></li>
+                <li><a href="../userhome2.html" class="active">Ebikes Products</a></li>
+                <li><a href="../contact/contact.html">Contact</a></li>
+                <li><a href="../priv,rep/repair.html">Repair Booking</a></li>
+            </ul>
+
+            <div class="profile-menu">
+                <button class="profile-btn" aria-label="Profile">
+                    <img src="../userhomelogo.jpg" alt="Profile">
+                </button>
+
+                <div class="dropdown">
+                    <a href="../../Usersetting.html/settings.html">Account</a>
+                    <a href="../../Usersetting.html/settings.html#orderSection">Order Status</a>
+                    <a href="../../log in.html">Log Out</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="page-wrapper">
+        <section class="left-card">
+            <img src="../image 10.png" class="bike-img" alt="MODEL: ECONO 650 MP" id="bike-image">
+
+            <div class="color-picker">
+                <p class="color-label">Select Color</p>
+                <div class="color-line"></div>
+                <div class="color-dots">
+                    <button type="button" class="dot gray" aria-label="Gray color" data-image="../10g.png"></button>
+                    <button type="button" class="dot blue active" aria-label="Blue color" data-image="../image 10.png"></button>
+                    <button type="button" class="dot green" aria-label="Green color" data-image="../10gr.png"></button>
+                </div>
+            </div>
+        </section>
+
+        <section class="right-card">
+            <h1 class="model-title">MODEL: E-CAB 1000</h1>
+
+            <ul class="spec-list">
+                <li><strong>Power:</strong> 650 watts</li>
+                <li><strong>Battery:</strong> 60volts 32ah</li>
+                <li><strong>Battery Type:</strong> Graphene (S.L.A) Battery</li>
+                <li><strong>Brake System</strong></li>
+                <li><strong>Front -</strong> Drum Brake</li>
+                <li><strong>Rear -</strong> Drum Brake</li>
+                <li><strong>Range:</strong> 45-50 km</li>
+                <li><strong>Speed:</strong> 35-35 km/h</li>
+                <li><strong>Charging time:</strong> 6-8 hrs</li>
+            </ul>
+            <div class="price-row">
+                <p class="price">Price:  ₱65,000.00</p>
+                <button class="check-btn" onclick="location.href='../payment/booking.html'">Book Now</button>
+            </div>
+
+            <div class="bike-page-nav">
+                <a class="bike-nav-btn prev" href="ebike9.0.html" aria-label="Previous ebike">&#8249;</a>
+                <a class="bike-nav-btn next" href="ebike11.0.html" aria-label="Next ebike">&#8250;</a>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        (function () {
+            const profileBtn = document.querySelector(".profile-menu .profile-btn");
+            const dropdown = document.querySelector(".profile-menu .dropdown");
+
+            if (profileBtn && dropdown) {
+                profileBtn.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                    dropdown.classList.toggle("show");
+                });
+
+                dropdown.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                });
+
+                document.addEventListener("click", function () {
+                    dropdown.classList.remove("show");
+                });
+            }
+
+            const bikeImage = document.getElementById("bike-image");
+            const dots = document.querySelectorAll(".dot");
+            dots.forEach((dot) => {
+                dot.addEventListener("click", function () {
+                    dots.forEach((d) => d.classList.remove("active"));
+                    this.classList.add("active");
+
+                    if (bikeImage && this.dataset.image) {
+                        bikeImage.src = this.dataset.image;
+                    }
+                });
+            });
+        })();
+    </script>
+    <script src="ebike-booking-selection.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

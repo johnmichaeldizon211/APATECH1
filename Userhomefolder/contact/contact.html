@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecodrive - Contact</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="contact.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">ECODRIVE</div>
+
+        <div class="nav-right">
+            <ul class="nav-links">
+                <li><a href="../userhome.html">Home</a></li>
+                <li><a href="../bookings/bookings.html">Bookings</a></li>
+                <li><a href="../userhome2.html">Ebikes Products</a></li>
+                <li><a href="contact.html" class="active">Contact</a></li>
+                <li><a href="../priv,rep/repair.html">Repair Booking</a></li>
+            </ul>
+
+            <div class="profile-menu">
+                <button class="profile-btn" aria-label="Profile">
+                    <img src="../userhomelogo.jpg" alt="Profile">
+                </button>
+
+                <div class="dropdown">
+                    <a href="../../Usersetting.html/settings.html">Account</a>
+                    <a href="../../Usersetting.html/settings.html#orderSection">Order Status</a>
+                    <a href="../../log in.html">Log Out</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="contact-main">
+        <section class="contact-card" aria-labelledby="contact-title">
+            <h1 id="contact-title">CONTACTS</h1>
+
+            <ul class="contact-list">
+                <li>
+                    <span class="icon" aria-hidden="true">&#9742;</span>
+                    <a href="tel:09338288185">09338288185</a>
+                </li>
+                <li>
+                    <span class="icon" aria-hidden="true">f</span>
+                    <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer">Ecodrive Baliuag</a>
+                </li>
+                <li>
+                    <span class="icon" aria-hidden="true">&#9993;</span>
+                    <a href="mailto:ecodrive@gmail.com">ecodrive@gmail.com</a>
+                </li>
+                <li>
+                    <span class="icon" aria-hidden="true">&#9906;</span>
+                    <span>Poblacion, Baliwag, Bulacan</span>
+                </li>
+            </ul>
+        </section>
+    </main>
+
+    <button type="button" class="chatbot" id="chatbot-toggle" aria-label="Open chatbot">&#129302;</button>
+
+    <section class="chat-panel" id="chat-panel" aria-hidden="true">
+        <header class="chat-header">
+            <strong>Ecodrive Bot</strong>
+            <button type="button" id="chat-close" aria-label="Close chat">x</button>
+        </header>
+        <div class="chat-body" id="chat-body"></div>
+        <form class="chat-form" id="chat-form" action="#">
+            <input type="text" id="chat-input" placeholder="Type your message">
+            <button type="submit">Send</button>
+        </form>
+    </section>
+
+    <script>
+        (function () {
+            const profileBtn = document.querySelector(".profile-menu .profile-btn");
+            const dropdown = document.querySelector(".profile-menu .dropdown");
+
+            if (profileBtn && dropdown) {
+                profileBtn.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                    dropdown.classList.toggle("show");
+                });
+
+                dropdown.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                });
+
+                document.addEventListener("click", function () {
+                    dropdown.classList.remove("show");
+                });
+            }
+
+            const botToggle = document.getElementById("chatbot-toggle");
+            const chatPanel = document.getElementById("chat-panel");
+            const chatClose = document.getElementById("chat-close");
+            const chatForm = document.getElementById("chat-form");
+            const chatInput = document.getElementById("chat-input");
+            const chatBody = document.getElementById("chat-body");
+            const chatKey = "ecodrive_chat_messages_v1";
+            let chatMessages = [];
+
+            try {
+                const parsed = JSON.parse(localStorage.getItem(chatKey) || "[]");
+                if (Array.isArray(parsed)) {
+                    chatMessages = parsed;
+                }
+            } catch (_error) {
+                chatMessages = [];
+            }
+
+            if (chatMessages.length === 0) {
+                chatMessages = [{ from: "bot", text: "Hello! I'm Ecodrive Bot. How can I help?" }];
+                localStorage.setItem(chatKey, JSON.stringify(chatMessages));
+            }
+
+            function saveMessages() {
+                localStorage.setItem(chatKey, JSON.stringify(chatMessages));
+            }
+
+            function renderMessages() {
+                if (!chatBody) return;
+                chatBody.innerHTML = "";
+
+                chatMessages.forEach(function (entry) {
+                    const bubble = document.createElement("div");
+                    bubble.className = "chat-bubble " + (entry.from === "user" ? "user" : "bot");
+                    bubble.textContent = entry.text;
+                    chatBody.appendChild(bubble);
+                });
+
+                chatBody.scrollTop = chatBody.scrollHeight;
+            }
+
+            function getBotReply(text) {
+                const value = text.toLowerCase();
+                if (value.includes("hello") || value.includes("hi")) return "Hi! We can help with bookings and repair concerns.";
+                if (value.includes("repair")) return "Go to Repair Booking from the menu and submit the issue details.";
+                if (value.includes("booking")) return "For product bookings, open the Bookings page from the top menu.";
+                if (value.includes("contact") || value.includes("address")) return "You can reach us via phone, email, or our Baliwag branch address.";
+                return "Thanks for your message. Our support team will contact you soon.";
+            }
+
+            function openChat() {
+                if (!chatPanel) return;
+                chatPanel.classList.add("open");
+                chatPanel.setAttribute("aria-hidden", "false");
+                renderMessages();
+                if (chatInput) chatInput.focus();
+            }
+
+            function closeChat() {
+                if (!chatPanel) return;
+                chatPanel.classList.remove("open");
+                chatPanel.setAttribute("aria-hidden", "true");
+            }
+
+            if (botToggle) {
+                botToggle.addEventListener("click", function () {
+                    if (!chatPanel) return;
+                    if (chatPanel.classList.contains("open")) closeChat();
+                    else openChat();
+                });
+            }
+
+            if (chatClose) {
+                chatClose.addEventListener("click", closeChat);
+            }
+
+            if (chatForm) {
+                chatForm.addEventListener("submit", function (event) {
+                    event.preventDefault();
+                    const text = (chatInput && chatInput.value ? chatInput.value : "").trim();
+                    if (!text) return;
+
+                    chatMessages.push({ from: "user", text: text });
+                    chatMessages.push({ from: "bot", text: getBotReply(text) });
+                    saveMessages();
+                    renderMessages();
+
+                    if (chatInput) {
+                        chatInput.value = "";
+                        chatInput.focus();
+                    }
+                });
+            }
+
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape") closeChat();
+            });
+        })();
+    </script>
+</body>
+</html>

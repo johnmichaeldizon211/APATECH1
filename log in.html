@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecodrive Login</title>
+    <link rel="stylesheet" href="log in.css">
+</head>
+<body>
+
+<div class="login-container">
+
+    <div class="left">
+        <img src="col.jpg" alt="ecodrive">
+    </div>
+
+    <div class="right">
+
+        <h1 class="logo">Ecodrive</h1>
+        <p class="sub">Baliwag, Bulacan</p>
+
+        <h2 class="login-title">Log in</h2>
+        <p class="welcome">Welcome back! Please enter your details.</p>
+
+        <form id="loginForm" novalidate>
+            <label>Email</label>
+            <input type="text" id="email" placeholder="Enter your email" autocomplete="username" required>
+
+            <label>Password</label>
+            <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password" required>
+
+            <div class="extras">
+                <div class="remember">
+                    <input type="checkbox" id="remember">
+                    <label for="remember">Remember for 30 days</label>
+                </div>
+                <a href="forgot.html">Forgot password?</a>
+            </div>
+
+            <button class="signin-btn" type="submit">Sign in</button>
+            <p id="loginError" style="min-height:18px;color:#c82828;font-size:12px;margin:10px 0 0;" aria-live="polite"></p>
+
+            <p class="signup">Don't have an account? <a href="signup.html">Sign up</a></p>
+        </form>
+
+    </div>
+
+</div>
+
+<script src="log in.js?v=20260213-2"></script>
+
+</body>
+</html>

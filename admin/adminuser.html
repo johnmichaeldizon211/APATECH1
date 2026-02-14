@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecodrive Admin - Users</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="adminuser.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">ECODRIVE</div>
+        <button class="profile-btn" type="button" aria-label="Profile">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 12a4.2 4.2 0 1 0-4.2-4.2A4.2 4.2 0 0 0 12 12Zm0 2.1c-3.3 0-6.9 1.7-6.9 4.9V20h13.8v-1c0-3.2-3.6-4.9-6.9-4.9Z"/>
+            </svg>
+        </button>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h2 class="sidebar-title">ECODRIVE<br>ADMIN</h2>
+
+            <nav class="sidebar-nav">
+                <a class="nav-btn" href="admin.html">Dashboard</a>
+                <a class="nav-btn" href="adminorder.html">Booking Request</a>
+                <a class="nav-btn" href="adminprice.html">Price Management</a>
+                <a class="nav-btn" href="adminstock.html">Stocks</a>
+                <a class="nav-btn active" href="adminuser.html">Users</a>
+            </nav>
+
+            <a class="logout-btn" href="../log in.html">Logout</a>
+        </aside>
+
+        <main class="content">
+            <section class="panel title-panel">
+                <h1>Users</h1>
+            </section>
+
+            <section class="stats-grid">
+                <article class="panel stat-card">
+                    <h3>Total Users</h3>
+                    <p class="value" id="stat-total-users">0</p>
+                </article>
+                <article class="panel stat-card">
+                    <h3>Active User</h3>
+                    <p class="value" id="stat-active-users">0</p>
+                </article>
+                <article class="panel stat-card">
+                    <h3>New User this Month</h3>
+                    <p class="value" id="stat-new-users">0</p>
+                </article>
+                <article class="panel stat-card">
+                    <h3>Blocked</h3>
+                    <p class="value" id="stat-blocked-users">0</p>
+                </article>
+            </section>
+
+            <section class="panel users-panel">
+                <h2 class="panel-caption">User List</h2>
+
+                <div class="table-head">
+                    <span>Name</span>
+                    <span>Email</span>
+                    <span>Role</span>
+                    <span>Status</span>
+                    <span>Action</span>
+                </div>
+
+                <div id="users-table-body" class="users-table-body"></div>
+
+                <div id="users-empty-state" class="empty-state" role="status" aria-live="polite">
+                    <p>No users yet.</p>
+                    <span>Registered users will appear here.</span>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <button class="next-btn" type="button">Next <span aria-hidden="true">&#8594;</span></button>
+    <script src="adminuser.js?v=20260213"></script>
+</body>
+</html>

@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecodrive - My Bookings</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="bookings.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">ECODRIVE</div>
+
+        <div class="nav-right">
+            <ul class="nav-links">
+                <li><a href="../userhome.html">Home</a></li>
+                <li><a href="bookings.html" class="active">Bookings</a></li>
+                <li><a href="../userhome2.html">Ebikes Products</a></li>
+                <li><a href="../contact/contact.html">Contact</a></li>
+                <li><a href="../priv,rep/repair.html">Repair Booking</a></li>
+            </ul>
+
+            <div class="profile-menu">
+                <button class="profile-btn" aria-label="Profile">
+                    <img src="../userhomelogo.jpg" alt="Profile">
+                </button>
+
+                <div class="dropdown">
+                    <a href="../../Usersetting.html/settings.html">Account</a>
+                    <a href="../../Usersetting.html/settings.html#orderSection">Order Status</a>
+                    <a href="../../log in.html">Log Out</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="bookings-layout">
+        <section class="bookings-table" aria-label="User bookings table">
+            <header class="table-head row-grid">
+                <span>Product</span>
+                <span>Date</span>
+                <span>Status</span>
+                <span>Total</span>
+                <span>Service</span>
+                <span>Status</span>
+                <span>Action</span>
+            </header>
+
+            <div id="bookingRows" class="table-body" aria-live="polite"></div>
+        </section>
+    </main>
+
+    <button type="button" class="chatbot" id="chatbot-toggle" aria-label="Open chatbot">&#129302;</button>
+
+    <section class="chat-panel" id="chat-panel" aria-hidden="true">
+        <header class="chat-header">
+            <strong>Ecodrive Bot</strong>
+            <button type="button" id="chat-close" aria-label="Close chat">x</button>
+        </header>
+        <div class="chat-body" id="chat-body"></div>
+        <form class="chat-form" id="chat-form" action="#">
+            <input type="text" id="chat-input" placeholder="Type your message">
+            <button type="submit">Send</button>
+        </form>
+    </section>
+
+    <script>
+        (function () {
+            const profileBtn = document.querySelector(".profile-menu .profile-btn");
+            const dropdown = document.querySelector(".profile-menu .dropdown");
+            const bookingRows = document.getElementById("bookingRows");
+            const currentUserKey = "ecodrive_current_user_email";
+            const bookingStorageKeys = ["ecodrive_bookings", "ecodrive_orders", "orders"];
+
+            if (profileBtn && dropdown) {
+                profileBtn.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                    dropdown.classList.toggle("show");
+                });
+
+                dropdown.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                });
+
+                document.addEventListener("click", function () {
+                    dropdown.classList.remove("show");
+                });
+            }
+
+            function safeParse(value) {
+                try {
+                    return JSON.parse(value);
+                } catch (_error) {
+                    return null;
+                }
+            }
+
+            function getCurrentUserEmail() {
+                const localValue = (localStorage.getItem(currentUserKey) || "").trim().toLowerCase();
+                if (localValue) {
+                    return localValue;
+                }
+                return (sessionStorage.getItem(currentUserKey) || "").trim().toLowerCase();
+            }
+
+            function readBookings() {
+                const merged = [];
+                bookingStorageKeys.forEach(function (key) {
+                    const parsed = safeParse(localStorage.getItem(key));
+                    if (Array.isArray(parsed)) {
+                        merged.push.apply(merged, parsed);
+                    }
+                });
+
+                const latest = safeParse(localStorage.getItem("latestBooking"));
+                if (latest && typeof latest === "object") {
+                    merged.push(latest);
+                }
+
+                return merged;
+            }
+
+            function canCancelBookingStatus(statusValue, fulfillmentValue) {
+                const mergedStatus = (String(statusValue || "") + " " + String(fulfillmentValue || "")).toLowerCase();
+                if (mergedStatus.includes("cancel")) {
+                    return false;
+                }
+                if (mergedStatus.includes("completed") || mergedStatus.includes("delivered")) {
+                    return false;
+                }
+                return true;
+            }
+
+            function isCancelledBookingStatus(statusValue, fulfillmentValue) {
+                const mergedStatus = (String(statusValue || "") + " " + String(fulfillmentValue || "")).toLowerCase();
+                return mergedStatus.includes("cancel");
+            }
+
+            function getRecordEmail(record) {
+                return String((record && (record.email || record.userEmail)) || "").trim().toLowerCase();
+            }
+
+            function isRecordForCurrentUser(record, currentEmail) {
+                if (!currentEmail) {
+                    return true;
+                }
+                return getRecordEmail(record) === currentEmail;
+            }
+
+            function cleanupCancelledBookings() {
+                const currentEmail = getCurrentUserEmail();
+                let changed = false;
+
+                bookingStorageKeys.forEach(function (key) {
+                    const parsed = safeParse(localStorage.getItem(key));
+                    if (!Array.isArray(parsed)) {
+                        return;
+                    }
+
+                    const filtered = parsed.filter(function (record) {
+                        if (!record || typeof record !== "object") {
+                            return false;
+                        }
+
+                        const status = String(record.status || "");
+                        const fulfillmentStatus = String(record.fulfillmentStatus || "");
+                        if (!isCancelledBookingStatus(status, fulfillmentStatus)) {
+                            return true;
+                        }
+
+                        return !isRecordForCurrentUser(record, currentEmail);
+                    });
+
+                    if (filtered.length !== parsed.length) {
+                        localStorage.setItem(key, JSON.stringify(filtered));
+                        changed = true;
+                    }
+                });
+
+                const latest = safeParse(localStorage.getItem("latestBooking"));
+                if (latest && typeof latest === "object") {
+                    const latestStatus = String(latest.status || "");
+                    const latestFulfillmentStatus = String(latest.fulfillmentStatus || "");
+                    if (isCancelledBookingStatus(latestStatus, latestFulfillmentStatus) && isRecordForCurrentUser(latest, currentEmail)) {
+                        localStorage.removeItem("latestBooking");
+                        changed = true;
+                    }
+                }
+
+                return changed;
+            }
+
+            function normalizeBookings(rawBookings) {
+                const currentEmail = getCurrentUserEmail();
+
+                const normalized = rawBookings
+                    .map(function (item, index) {
+                        if (!item || typeof item !== "object") {
+                            return null;
+                        }
+
+                        const entryEmail = String(item.email || item.userEmail || "").trim().toLowerCase();
+                        if (currentEmail && entryEmail !== currentEmail) {
+                            return null;
+                        }
+
+                        const createdAt = item.createdAt || item.updatedAt || new Date().toISOString();
+                        const service = String(item.service || item.deliveryOption || "Delivery");
+                        const status = String(item.status || "Preparing");
+                        const fulfillmentStatus = String(item.fulfillmentStatus || (service === "Pick Up" ? "Ready to Pick up" : "In Process"));
+                        if (isCancelledBookingStatus(status, fulfillmentStatus)) {
+                            return null;
+                        }
+
+                        return {
+                            orderId: String(item.orderId || item.id || ("#EC-" + (1000 + index))),
+                            model: String(item.model || item.productName || item.itemName || "Ecodrive Ebike"),
+                            createdAt: createdAt,
+                            status: status,
+                            total: Number(item.total || 0),
+                            service: service,
+                            fulfillmentStatus: fulfillmentStatus,
+                            canCancel: canCancelBookingStatus(status, fulfillmentStatus)
+                        };
+                    })
+                    .filter(Boolean)
+                    .sort(function (a, b) {
+                        return String(b.createdAt).localeCompare(String(a.createdAt));
+                    });
+
+                const deduped = [];
+                const seen = new Set();
+                normalized.forEach(function (item) {
+                    const key = item.orderId + "|" + item.createdAt;
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        deduped.push(item);
+                    }
+                });
+
+                return deduped;
+            }
+
+            function formatDate(dateValue) {
+                const date = new Date(dateValue);
+                if (Number.isNaN(date.getTime())) {
+                    return "-";
+                }
+
+                return date.toLocaleDateString("en-US", {
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric"
+                });
+            }
+
+            function formatPeso(amount) {
+                const value = Number(amount || 0);
+                return "&#8369;" + value.toLocaleString("en-PH", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+
+            function escapeHtml(value) {
+                return String(value)
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/\"/g, "&quot;")
+                    .replace(/'/g, "&#39;");
+            }
+
+            function decodeToken(value) {
+                try {
+                    return decodeURIComponent(String(value || ""));
+                } catch (_error) {
+                    return String(value || "");
+                }
+            }
+
+            function encodeToken(value) {
+                return encodeURIComponent(String(value || ""));
+            }
+
+            function getRecordOrderId(record) {
+                return String((record && (record.orderId || record.id)) || "").trim();
+            }
+
+            function getRecordCreatedAt(record) {
+                return String((record && (record.createdAt || record.updatedAt)) || "").trim();
+            }
+
+            function matchesBookingRecord(record, orderId, createdAt) {
+                if (!record || typeof record !== "object") {
+                    return false;
+                }
+
+                const sameOrderId = getRecordOrderId(record) === String(orderId || "").trim();
+                if (!sameOrderId) {
+                    return false;
+                }
+
+                const targetCreatedAt = String(createdAt || "").trim();
+                if (!targetCreatedAt) {
+                    return true;
+                }
+                const recordCreatedAt = getRecordCreatedAt(record);
+                if (!recordCreatedAt) {
+                    return true;
+                }
+                return recordCreatedAt === targetCreatedAt;
+            }
+
+            function removeBookingFromArrayStorage(storageKey, orderId, createdAt) {
+                const parsed = safeParse(localStorage.getItem(storageKey));
+                if (!Array.isArray(parsed)) {
+                    return false;
+                }
+
+                const filteredList = parsed.filter(function (record) {
+                    return !matchesBookingRecord(record, orderId, createdAt);
+                });
+
+                if (filteredList.length === parsed.length) {
+                    return false;
+                }
+
+                localStorage.setItem(storageKey, JSON.stringify(filteredList));
+                return true;
+            }
+
+            function cancelBooking(orderId, createdAt) {
+                let updated = false;
+
+                bookingStorageKeys.forEach(function (key) {
+                    if (removeBookingFromArrayStorage(key, orderId, createdAt)) {
+                        updated = true;
+                    }
+                });
+
+                const latest = safeParse(localStorage.getItem("latestBooking"));
+                if (matchesBookingRecord(latest, orderId, createdAt)) {
+                    localStorage.removeItem("latestBooking");
+                    updated = true;
+                }
+
+                return updated;
+            }
+
+            function renderRows() {
+                if (!bookingRows) {
+                    return;
+                }
+
+                cleanupCancelledBookings();
+                const items = normalizeBookings(readBookings());
+                const maxRows = 6;
+                const htmlParts = [];
+
+                items.slice(0, maxRows).forEach(function (item) {
+                    const actionHtml = item.canCancel
+                        ? "<button type=\"button\" class=\"cancel-btn\" data-order-id=\"" + encodeToken(item.orderId) + "\" data-created-at=\"" + encodeToken(item.createdAt) + "\">Cancel</button>"
+                        : "<span class=\"cancelled-note\">N/A</span>";
+
+                    htmlParts.push(
+                        "<article class=\"table-row row-grid\">" +
+                            "<span class=\"product\">" + escapeHtml(item.model.toUpperCase()) + "</span>" +
+                            "<span>" + escapeHtml(formatDate(item.createdAt)) + "</span>" +
+                            "<span>" + escapeHtml(item.status) + "</span>" +
+                            "<span class=\"total\">" + formatPeso(item.total) + "</span>" +
+                            "<span><span class=\"service-pill\">" + escapeHtml(item.service) + "</span></span>" +
+                            "<span>" + escapeHtml(item.fulfillmentStatus) + "</span>" +
+                            "<span>" + actionHtml + "</span>" +
+                        "</article>"
+                    );
+                });
+
+                bookingRows.innerHTML = htmlParts.join("");
+            }
+
+            if (bookingRows) {
+                bookingRows.addEventListener("click", function (event) {
+                    const cancelBtn = event.target.closest(".cancel-btn");
+                    if (!cancelBtn) {
+                        return;
+                    }
+
+                    const orderId = decodeToken(cancelBtn.getAttribute("data-order-id"));
+                    const createdAt = decodeToken(cancelBtn.getAttribute("data-created-at"));
+                    if (!orderId) {
+                        return;
+                    }
+
+                    if (!window.confirm("Do you want to cancel this booking?")) {
+                        return;
+                    }
+
+                    if (cancelBooking(orderId, createdAt)) {
+                        renderRows();
+                    }
+                });
+            }
+
+            renderRows();
+
+            const botToggle = document.getElementById("chatbot-toggle");
+            const chatPanel = document.getElementById("chat-panel");
+            const chatClose = document.getElementById("chat-close");
+            const chatForm = document.getElementById("chat-form");
+            const chatInput = document.getElementById("chat-input");
+            const chatBody = document.getElementById("chat-body");
+            const chatKey = "ecodrive_chat_messages_v1";
+            let chatMessages = [];
+
+            const parsedMessages = safeParse(localStorage.getItem(chatKey));
+            if (Array.isArray(parsedMessages)) {
+                chatMessages = parsedMessages;
+            }
+
+            if (chatMessages.length === 0) {
+                chatMessages = [{ from: "bot", text: "Hello! I'm Ecodrive Bot. How can I help?" }];
+                localStorage.setItem(chatKey, JSON.stringify(chatMessages));
+            }
+
+            function saveMessages() {
+                localStorage.setItem(chatKey, JSON.stringify(chatMessages));
+            }
+
+            function renderMessages() {
+                if (!chatBody) return;
+                chatBody.innerHTML = "";
+
+                chatMessages.forEach(function (entry) {
+                    const bubble = document.createElement("div");
+                    bubble.className = "chat-bubble " + (entry.from === "user" ? "user" : "bot");
+                    bubble.textContent = entry.text;
+                    chatBody.appendChild(bubble);
+                });
+
+                chatBody.scrollTop = chatBody.scrollHeight;
+            }
+
+            function getBotReply(text) {
+                const value = text.toLowerCase();
+                if (value.includes("hello") || value.includes("hi")) return "Hi! We can help with your bookings and order status.";
+                if (value.includes("cancel")) return "Open your booking row and use the Cancel button if it is still available.";
+                if (value.includes("repair")) return "You can submit repair concerns from the Repair Booking page.";
+                if (value.includes("status") || value.includes("order")) return "Order status is shown per row in your bookings table.";
+                return "Thanks for your message. Our support team will contact you soon.";
+            }
+
+            function openChat() {
+                if (!chatPanel) return;
+                chatPanel.classList.add("open");
+                chatPanel.setAttribute("aria-hidden", "false");
+                renderMessages();
+                if (chatInput) chatInput.focus();
+            }
+
+            function closeChat() {
+                if (!chatPanel) return;
+                chatPanel.classList.remove("open");
+                chatPanel.setAttribute("aria-hidden", "true");
+            }
+
+            if (botToggle) {
+                botToggle.addEventListener("click", function () {
+                    if (!chatPanel) return;
+                    if (chatPanel.classList.contains("open")) closeChat();
+                    else openChat();
+                });
+            }
+
+            if (chatClose) {
+                chatClose.addEventListener("click", closeChat);
+            }
+
+            if (chatForm) {
+                chatForm.addEventListener("submit", function (event) {
+                    event.preventDefault();
+                    const text = (chatInput && chatInput.value ? chatInput.value : "").trim();
+                    if (!text) return;
+
+                    chatMessages.push({ from: "user", text: text });
+                    chatMessages.push({ from: "bot", text: getBotReply(text) });
+                    saveMessages();
+                    renderMessages();
+
+                    if (chatInput) {
+                        chatInput.value = "";
+                        chatInput.focus();
+                    }
+                });
+            }
+
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape") closeChat();
+            });
+        })();
+    </script>
+</body>
+</html>

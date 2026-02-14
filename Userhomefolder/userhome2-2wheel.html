@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECODRIVE - 2 Wheel E-Bikes</title>
+    <meta name="description" content="2-wheel E-Bikes catalog">
+    <link rel="stylesheet" href="userhome2.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+        <nav class="navbar">
+        <div class="logo">ECODRIVE</div>
+
+        <div class="nav-right">
+            <ul class="nav-links">
+                <li><a href="userhome.html">Home</a></li>
+                <li><a href="bookings/bookings.html">Bookings</a></li>
+                <li><a href="userhome2.html" class="active">Ebikes Products</a></li>
+                <li><a href="contact/contact.html">Contact</a></li>
+                <li><a href="priv,rep/repair.html">Repair Booking</a></li>
+            </ul>
+
+            <div class="profile-menu">
+                <button class="profile-btn" aria-label="Profile">
+                    <img src="userhomelogo.jpg" alt="Profile">
+                </button>
+                <div class="dropdown">
+                    <a href="../Usersetting.html/settings.html">Account</a>
+                    <a href="../Usersetting.html/settings.html#orderSection">Order Status</a>
+                    <a href="../log in.html">Log Out</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <section class="page-head">
+            <h1 class="section-title">E-BIKES</h1>
+            <div class="category-filter">
+                <a class="filter" href="userhome2.html">ALL</a>
+                <a class="filter active" href="userhome2-2wheel.html">2-WHEEL</a>
+                <a class="filter" href="userhome2-3wheel.html">3-WHEEL</a>
+                <a class="filter" href="userhome2-4wheel.html">4-WHEEL</a>
+            </div>
+        </section>
+
+        <section class="products">
+            <article class="card">
+                <div class="img-wrap"><img src="image 1.png" alt="BLITZ 2000"></div>
+                <div class="card-body">
+                    <h3 class="prod-name">BLITZ 2000</h3>
+                    <p class="price">PRICE &#8369;68,000.00</p>
+                    <button class="btn" onclick="location.href='Ebikes/ebike1.0.html'">Book Now</button>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="img-wrap"><img src="image 2.png" alt="BLITZ 1200"></div>
+                <div class="card-body">
+                    <h3 class="prod-name">BLITZ 1200</h3>
+                    <p class="price">PRICE &#8369;45,000.00</p>
+                    <button class="btn" onclick="location.href='Ebikes/ebike2.0.html'">Book Now</button>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="img-wrap"><img src="image 3.png" alt="FUN 1500 FI"></div>
+                <div class="card-body">
+                    <h3 class="prod-name">FUN 1500 FI</h3>
+                    <p class="price">PRICE &#8369;74,000.00</p>
+                    <button class="btn" onclick="location.href='Ebikes/ebike3.0.html'">Book Now</button>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="img-wrap"><img src="image 4.png" alt="CANDY 800"></div>
+                <div class="card-body">
+                    <h3 class="prod-name">CANDY 800</h3>
+                    <p class="price">PRICE &#8369;58,000.00</p>
+                    <button class="btn" onclick="location.href='Ebikes/ebike4.0.html'">Book Now</button>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="img-wrap"><img src="image 5.png" alt="BLITZ 200R"></div>
+                <div class="card-body">
+                    <h3 class="prod-name">BLITZ 200R</h3>
+                    <p class="price">PRICE &#8369;74,000.00</p>
+                    <button class="btn" onclick="location.href='Ebikes/ebike5.0.html'">Book Now</button>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="img-wrap"><img src="image 6.png" alt="TRAVELLER 1500"></div>
+                <div class="card-body">
+                    <h3 class="prod-name">TRAVELLER 1500</h3>
+                    <p class="price">PRICE &#8369;79,000.00</p>
+                    <button class="btn" onclick="location.href='Ebikes/ebike6.0.html'">Book Now</button>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="img-wrap"><img src="image 7.png" alt="ECONO 500 MP"></div>
+                <div class="card-body">
+                    <h3 class="prod-name">ECONO 500 MP</h3>
+                    <p class="price">PRICE &#8369;51,500.00</p>
+                    <button class="btn" onclick="location.href='Ebikes/ebike7.0.html'">Book Now</button>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="img-wrap"><img src="image 8.png" alt="ECONO 350 MINI-II"></div>
+                <div class="card-body">
+                    <h3 class="prod-name">ECONO 350 MINI-II</h3>
+                    <p class="price">PRICE &#8369;58,000.00</p>
+                    <button class="btn" onclick="location.href='Ebikes/ebike8.0.html'">Book Now</button>
+                </div>
+            </article>
+        </section>
+    </main>
+
+    <button type="button" class="chatbot" id="chatbot-toggle" aria-label="Open chatbot">&#129302;</button>
+
+    <section class="chat-panel" id="chat-panel" aria-hidden="true" aria-live="polite">
+        <header class="chat-header">
+            <span>Ecodrive Bot</span>
+            <button type="button" class="chat-close" id="chat-close" aria-label="Close chat">x</button>
+        </header>
+
+        <div class="chat-body" id="chat-body" role="log" aria-live="polite"></div>
+
+        <form class="chat-form" id="chat-form" action="#" onsubmit="return false;">
+            <input type="text" id="chat-input" placeholder="Type your message" aria-label="Type your message">
+            <button type="submit" id="chat-send" aria-label="Send message">Send</button>
+        </form>
+    </section>
+
+    <script>
+        (function () {
+            const profileBtn = document.querySelector('.profile-menu .profile-btn');
+            const dropdown = document.querySelector('.profile-menu .dropdown');
+
+            if (profileBtn && dropdown) {
+                profileBtn.addEventListener('click', function (event) {
+                    event.stopPropagation();
+                    dropdown.classList.toggle('show');
+                });
+
+                dropdown.addEventListener('click', function (event) {
+                    event.stopPropagation();
+                });
+
+                document.addEventListener('click', function () {
+                    dropdown.classList.remove('show');
+                });
+            }
+
+            const toggle = document.getElementById('chatbot-toggle');
+            const panel = document.getElementById('chat-panel');
+            const closeBtn = document.getElementById('chat-close');
+            const form = document.getElementById('chat-form');
+            const input = document.getElementById('chat-input');
+            const body = document.getElementById('chat-body');
+            const storageKey = 'ecodrive_chat_messages_v1';
+
+            if (!(toggle && panel && closeBtn && form && input && body)) {
+                return;
+            }
+
+            let messages = [];
+            try {
+                const parsed = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                if (Array.isArray(parsed)) {
+                    messages = parsed;
+                }
+            } catch (_error) {
+                messages = [];
+            }
+
+            if (messages.length === 0) {
+                messages = [{ from: 'bot', text: "Hello! I'm Ecodrive Bot. Ask me about our products or services." }];
+                localStorage.setItem(storageKey, JSON.stringify(messages));
+            }
+
+            function saveMessages() {
+                localStorage.setItem(storageKey, JSON.stringify(messages));
+            }
+
+            function renderMessages() {
+                body.innerHTML = '';
+                messages.forEach(function (entry) {
+                    const bubble = document.createElement('div');
+                    bubble.className = 'chat-message ' + (entry.from === 'user' ? 'user' : 'bot');
+                    bubble.textContent = entry.text;
+                    body.appendChild(bubble);
+                });
+                body.scrollTop = body.scrollHeight;
+            }
+
+            function botReply(text) {
+                const value = text.toLowerCase();
+                if (value.includes('hi') || value.includes('hello')) return 'Hi there! How can I help you today?';
+                if (value.includes('price') || value.includes('cost')) return 'Our prices vary by model. Which model are you interested in?';
+                if (value.includes('delivery')) return 'We offer pickup and delivery options. Which would you prefer?';
+                return "Thanks! We'll get back to you shortly.";
+            }
+
+            function openPanel() {
+                panel.classList.add('open');
+                panel.setAttribute('aria-hidden', 'false');
+                renderMessages();
+                input.focus();
+            }
+
+            function closePanel() {
+                panel.classList.remove('open');
+                panel.setAttribute('aria-hidden', 'true');
+            }
+
+            toggle.addEventListener('click', function (event) {
+                event.stopPropagation();
+                if (panel.classList.contains('open')) closePanel();
+                else openPanel();
+            });
+
+            closeBtn.addEventListener('click', function (event) {
+                event.stopPropagation();
+                closePanel();
+            });
+
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+                const text = (input.value || '').trim();
+                if (!text) return;
+
+                messages.push({ from: 'user', text: text });
+                messages.push({ from: 'bot', text: botReply(text) });
+                saveMessages();
+                renderMessages();
+                input.value = '';
+                input.focus();
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    closePanel();
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
+

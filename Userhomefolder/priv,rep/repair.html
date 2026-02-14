@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecodrive - Repair Booking</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="repair.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">ECODRIVE</div>
+
+        <div class="nav-right">
+            <ul class="nav-links">
+                <li><a href="../userhome.html">Home</a></li>
+                <li><a href="../bookings/bookings.html">Bookings</a></li>
+                <li><a href="../userhome2.html">Ebikes Products</a></li>
+                <li><a href="../contact/contact.html">Contact</a></li>
+                <li><a href="repair.html" class="active">Repair Booking</a></li>
+            </ul>
+
+            <div class="profile-menu">
+                <button type="button" class="profile-btn" aria-label="Open profile menu">
+                    <img src="../userhomelogo.jpg" alt="Profile">
+                </button>
+
+                <div class="dropdown" aria-label="Profile menu">
+                    <a href="../../Usersetting.html/settings.html">Account</a>
+                    <a href="../../Usersetting.html/settings.html#orderSection">Order Status</a>
+                    <a href="../../log in.html">Log Out</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="repair-main">
+        <h1 class="page-title">Repair Booking Form <span aria-hidden="true">&#128736;</span></h1>
+
+        <section class="repair-card" aria-label="Repair booking form container">
+            <form id="repair-form" novalidate>
+                <div class="form-grid">
+                    <div class="left-col">
+                        <label for="repair-name">Name</label>
+                        <input id="repair-name" name="name" type="text" placeholder="Enter your name" required>
+
+                        <label for="repair-email">Email</label>
+                        <input id="repair-email" name="email" type="email" placeholder="Enter your email" required>
+
+                        <label for="repair-vehicle">Type of Vehicle</label>
+                        <input id="repair-vehicle" name="vehicle" type="text" placeholder="Vehicle type" required>
+
+                        <div class="date-time-row">
+                            <div class="input-col">
+                                <label for="repair-date">Date</label>
+                                <input id="repair-date" name="date" type="date" required>
+                            </div>
+
+                            <div class="input-col">
+                                <label for="repair-time">Time</label>
+                                <input id="repair-time" name="time" type="time" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="right-col">
+                        <div class="service-options" role="radiogroup" aria-label="Service type">
+                            <label class="service-choice">
+                                <input type="radio" name="service" value="Walk in" checked>
+                                <span class="service-radio" aria-hidden="true"></span>
+                                <span class="service-tag">Walk in</span>
+                            </label>
+
+                            <label class="service-choice">
+                                <input type="radio" name="service" value="Home Service">
+                                <span class="service-radio" aria-hidden="true"></span>
+                                <span class="service-tag">Home Service</span>
+                            </label>
+                        </div>
+
+                        <label for="repair-details" class="details-label">Please provide further information about what went wrong</label>
+                        <textarea id="repair-details" name="details" placeholder="Describe the issue" required></textarea>
+                    </div>
+                </div>
+
+                <div class="actions-row">
+                    <button type="submit" class="book-btn">Book Now</button>
+                </div>
+
+                <p id="repair-message" class="repair-message" aria-live="polite"></p>
+            </form>
+        </section>
+    </main>
+
+    <button type="button" class="chatbot" id="chatbot-toggle" aria-label="Open chatbot">&#129302;</button>
+
+    <section class="chat-panel" id="chat-panel" aria-hidden="true">
+        <header class="chat-header">
+            <strong>Ecodrive Bot</strong>
+            <button type="button" id="chat-close" aria-label="Close chat">x</button>
+        </header>
+        <div class="chat-body" id="chat-body"></div>
+        <form class="chat-form" id="chat-form" action="#">
+            <input type="text" id="chat-input" placeholder="Type your message">
+            <button type="submit">Send</button>
+        </form>
+    </section>
+
+    <script>
+        (function () {
+            const profileBtn = document.querySelector('.profile-btn');
+            const dropdown = document.querySelector('.dropdown');
+            const form = document.getElementById('repair-form');
+            const message = document.getElementById('repair-message');
+            const currentUserKey = 'ecodrive_current_user_email';
+
+            if (profileBtn && dropdown) {
+                profileBtn.addEventListener('click', function (event) {
+                    event.stopPropagation();
+                    dropdown.classList.toggle('show');
+                });
+
+                dropdown.addEventListener('click', function (event) {
+                    event.stopPropagation();
+                });
+
+                document.addEventListener('click', function () {
+                    dropdown.classList.remove('show');
+                });
+            }
+
+            function getCurrentUserEmail() {
+                const localEmail = (localStorage.getItem(currentUserKey) || '').trim().toLowerCase();
+                if (localEmail) return localEmail;
+                return (sessionStorage.getItem(currentUserKey) || '').trim().toLowerCase();
+            }
+
+            function saveRepairBooking(record) {
+                let list = [];
+                try {
+                    const parsed = JSON.parse(localStorage.getItem('ecodrive_repair_bookings') || '[]');
+                    if (Array.isArray(parsed)) {
+                        list = parsed;
+                    }
+                } catch (_error) {
+                    list = [];
+                }
+
+                list.push(record);
+                localStorage.setItem('ecodrive_repair_bookings', JSON.stringify(list));
+                localStorage.setItem('latestRepairBooking', JSON.stringify(record));
+            }
+
+            function setMessage(text, isError) {
+                if (!message) return;
+                message.textContent = text;
+                message.classList.toggle('error', !!isError);
+            }
+
+            if (form) {
+                form.addEventListener('submit', function (event) {
+                    event.preventDefault();
+                    setMessage('', false);
+
+                    const formData = new FormData(form);
+                    const payload = {
+                        id: 'REP-' + Date.now(),
+                        name: String(formData.get('name') || '').trim(),
+                        email: String(formData.get('email') || '').trim().toLowerCase(),
+                        vehicle: String(formData.get('vehicle') || '').trim(),
+                        date: String(formData.get('date') || '').trim(),
+                        time: String(formData.get('time') || '').trim(),
+                        service: String(formData.get('service') || 'Walk in').trim(),
+                        details: String(formData.get('details') || '').trim(),
+                        userEmail: getCurrentUserEmail(),
+                        status: 'Pending review',
+                        createdAt: new Date().toISOString()
+                    };
+
+                    if (!payload.name || !payload.email || !payload.vehicle || !payload.date || !payload.time || !payload.details) {
+                        setMessage('Please complete all required fields.', true);
+                        return;
+                    }
+
+                    saveRepairBooking(payload);
+                    form.reset();
+                    const defaultService = form.querySelector('input[name="service"][value="Walk in"]');
+                    if (defaultService) defaultService.checked = true;
+                    setMessage('Repair booking submitted successfully.', false);
+                });
+            }
+
+            const botToggle = document.getElementById('chatbot-toggle');
+            const chatPanel = document.getElementById('chat-panel');
+            const chatClose = document.getElementById('chat-close');
+            const chatForm = document.getElementById('chat-form');
+            const chatInput = document.getElementById('chat-input');
+            const chatBody = document.getElementById('chat-body');
+            const chatKey = 'ecodrive_chat_messages_v1';
+            let chatMessages = [];
+
+            try {
+                const parsed = JSON.parse(localStorage.getItem(chatKey) || '[]');
+                if (Array.isArray(parsed)) chatMessages = parsed;
+            } catch (_error) {
+                chatMessages = [];
+            }
+
+            if (chatMessages.length === 0) {
+                chatMessages = [{ from: 'bot', text: "Hello! I'm Ecodrive Bot. How can I help?" }];
+                localStorage.setItem(chatKey, JSON.stringify(chatMessages));
+            }
+
+            function renderMessages() {
+                if (!chatBody) return;
+                chatBody.innerHTML = '';
+                chatMessages.forEach(function (entry) {
+                    const bubble = document.createElement('div');
+                    bubble.className = 'chat-bubble ' + (entry.from === 'user' ? 'user' : 'bot');
+                    bubble.textContent = entry.text;
+                    chatBody.appendChild(bubble);
+                });
+                chatBody.scrollTop = chatBody.scrollHeight;
+            }
+
+            function saveMessages() {
+                localStorage.setItem(chatKey, JSON.stringify(chatMessages));
+            }
+
+            function openChat() {
+                if (!chatPanel) return;
+                chatPanel.classList.add('open');
+                chatPanel.setAttribute('aria-hidden', 'false');
+                renderMessages();
+                if (chatInput) chatInput.focus();
+            }
+
+            function closeChat() {
+                if (!chatPanel) return;
+                chatPanel.classList.remove('open');
+                chatPanel.setAttribute('aria-hidden', 'true');
+            }
+
+            function getBotReply(text) {
+                const value = text.toLowerCase();
+                if (value.includes('hello') || value.includes('hi')) return 'Hi! We can help with bookings and repair concerns.';
+                if (value.includes('repair')) return 'You can use this form and include your issue details. We will review it quickly.';
+                if (value.includes('booking')) return 'For product bookings, open the Bookings page from the top menu.';
+                return 'Thanks for your message. Our support team will contact you soon.';
+            }
+
+            if (botToggle) {
+                botToggle.addEventListener('click', function () {
+                    if (!chatPanel) return;
+                    if (chatPanel.classList.contains('open')) closeChat();
+                    else openChat();
+                });
+            }
+
+            if (chatClose) {
+                chatClose.addEventListener('click', closeChat);
+            }
+
+            if (chatForm) {
+                chatForm.addEventListener('submit', function (event) {
+                    event.preventDefault();
+                    const text = (chatInput && chatInput.value ? chatInput.value : '').trim();
+                    if (!text) return;
+
+                    chatMessages.push({ from: 'user', text: text });
+                    chatMessages.push({ from: 'bot', text: getBotReply(text) });
+                    saveMessages();
+                    renderMessages();
+                    if (chatInput) chatInput.value = '';
+                });
+            }
+
+            renderMessages();
+        })();
+    </script>
+</body>
+</html>

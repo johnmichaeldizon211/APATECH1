@@ -1,0 +1,154 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ecodrive | Settings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="settings.css">
+  <script src="settings.js" defer></script>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="top-nav">
+      <div class="brand">ECODRIVE</div>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="../Userhomefolder/userhome.html">Home</a>
+        <a href="../Userhomefolder/bookings/bookings.html">Bookings</a>
+        <a href="../Userhomefolder/userhome2.html">Ebikes Products</a>
+        <a href="../Userhomefolder/contact/contact.html">Contact</a>
+        <a href="../Userhomefolder/priv,rep/repair.html">Repair Booking</a>
+      </nav>
+
+      <div class="profile-menu">
+        <button class="profile-btn" aria-label="Profile">
+          <img src="../Userhomefolder/userhomelogo.jpg" alt="Profile">
+        </button>
+        <div class="dropdown">
+          <a href="#accountSection" data-target-section="accountSection">Account</a>
+          <a href="#orderSection" data-target-section="orderSection">Order Status</a>
+          <a href="../log in.html" id="topLogoutLink">Log Out</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="content-wrap">
+      <aside class="sidebar" aria-label="Account menu">
+        <div class="avatar-wrap">
+          <img src="../Userhomefolder/userhomelogo.jpg" alt="Profile avatar" id="avatarImage">
+          <label class="edit-dot avatar-edit-btn" for="avatarInput" aria-label="Change profile picture"></label>
+          <input id="avatarInput" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+        </div>
+        <p class="avatar-msg" id="avatarMsg" aria-live="polite"></p>
+        <button type="button" class="remove-avatar-btn" id="removeAvatarBtn">Remove Photo</button>
+
+        <div class="menu-buttons">
+          <button type="button" class="active" data-target="accountSection">Account</button>
+          <button type="button" data-target="securitySection">Privacy</button>
+          <button type="button" data-target="aboutSection">About</button>
+        </div>
+
+        <button class="logout-btn" id="logoutBtn" type="button">Logout</button>
+      </aside>
+
+      <main class="main-panel">
+        <section class="settings-card" aria-labelledby="settings-title">
+          <div class="settings-section" id="accountSection">
+            <form id="settingsForm" novalidate>
+              <h2 class="form-title" id="settings-title">ACCOUNT</h2>
+
+              <label for="fullName">Full Name</label>
+              <input id="fullName" name="fullName" type="text" placeholder="Full Name" autocomplete="name" aria-describedby="fullNameError">
+              <div class="field-error" id="fullNameError" aria-live="polite"></div>
+
+              <label for="email">Email Address</label>
+              <input id="email" name="email" type="email" placeholder="example@email.com" autocomplete="email" aria-describedby="emailError">
+              <div class="field-error" id="emailError" aria-live="polite"></div>
+
+              <label for="phone">Phone Number</label>
+              <input id="phone" name="phone" type="tel" placeholder="09XXXXXXXXX" autocomplete="tel" aria-describedby="phoneError">
+              <div class="field-error" id="phoneError" aria-live="polite"></div>
+
+              <label for="address">Address</label>
+              <input id="address" name="address" type="text" placeholder="Poblacion, Baliwag Bulacan" autocomplete="street-address" aria-describedby="addressError">
+              <div class="field-error" id="addressError" aria-live="polite"></div>
+
+              <div class="actions">
+                <button type="submit" class="save-btn">Save Changes</button>
+              </div>
+              <p class="status-msg" id="statusMsg" aria-live="polite"></p>
+            </form>
+          </div>
+
+          <div class="settings-section hidden" id="orderSection">
+            <h2 class="form-title">ORDER STATUS</h2>
+            <div class="order-list" id="orderList"></div>
+            <p class="status-msg" id="orderStatusMsg" aria-live="polite"></p>
+          </div>
+
+          <div class="settings-section hidden" id="securitySection">
+            <form id="securityForm" novalidate>
+              <h2 class="form-title">PRIVACY</h2>
+
+              <label for="currentPassword">Current Password</label>
+              <input id="currentPassword" name="currentPassword" type="password" placeholder="Enter current password" autocomplete="current-password" aria-describedby="currentPasswordError">
+              <div class="field-error" id="currentPasswordError" aria-live="polite"></div>
+
+              <label for="newSecurityPassword">New Password</label>
+              <input id="newSecurityPassword" name="newSecurityPassword" type="password" placeholder="Create a new password" autocomplete="new-password" aria-describedby="newSecurityPasswordError">
+              <div class="field-error" id="newSecurityPasswordError" aria-live="polite"></div>
+
+              <label for="confirmSecurityPassword">Confirm New Password</label>
+              <input id="confirmSecurityPassword" name="confirmSecurityPassword" type="password" placeholder="Repeat new password" autocomplete="new-password" aria-describedby="confirmSecurityPasswordError">
+              <div class="field-error" id="confirmSecurityPasswordError" aria-live="polite"></div>
+
+              <div class="actions">
+                <button type="submit" class="save-btn">Update Password</button>
+              </div>
+              <p class="status-msg" id="securityStatusMsg" aria-live="polite"></p>
+            </form>
+          </div>
+
+          <div class="settings-section hidden about-section" id="aboutSection">
+            <h2 class="form-title">ABOUT</h2>
+            <p class="about-copy">
+              EcoDrive Baliwag is a trusted vehicle service center in Baliwag, Bulacan, offering reliable car repair and maintenance services. We focus on eco-friendly practices, quality service, and customer convenience through easy booking and professional support.
+            </p>
+            <p class="about-contact">
+              MSS BALIUAG - 09338288185<br>
+              Poblacion Baliuag beside Southstar Drugs and Xaviery near St. Marys College
+            </p>
+          </div>
+        </section>
+
+        <div class="vertical-brand" aria-hidden="true">ECO DRIVE</div>
+      </main>
+    </div>
+
+        <button class="chatbot" id="chatbot-toggle" aria-label="Open chatbot">&#129302;</button>
+    <div class="chat-panel" id="chat-panel" aria-hidden="true" aria-live="polite">
+      <div class="chat-header">
+        <div class="chat-title">
+          <img src="../Userhomefolder/userhomelogo.jpg" alt="Bot" class="chat-avatar">
+          <div>
+            <div class="chat-name">Ecodrive Bot</div>
+            <div class="chat-sub">How can we help?</div>
+          </div>
+        </div>
+        <button class="chat-close" id="chat-close" aria-label="Close chat">&#10005;</button>
+      </div>
+
+      <div class="chat-body" id="chat-body" role="log" aria-live="polite"></div>
+
+      <form class="chat-form" id="chat-form" action="#" onsubmit="return false;">
+        <input type="text" id="chat-input" placeholder="Type a message" aria-label="Type a message">
+        <button type="submit" id="chat-send" aria-label="Send message">Send</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
+
+

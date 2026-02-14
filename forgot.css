@@ -1,0 +1,256 @@
+@font-face {
+    font-family: "Poppins";
+    src: url("https://fonts.gstatic.com/s/poppins/v20/pxiEyp8kv8JHgFVrJJfedA.woff2") format("woff2");
+}
+
+body {
+    font-family: "Poppins", sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+    height: 100vh;
+    overflow-x: hidden;
+}
+
+body::before,
+body::after {
+    content: "";
+    position: fixed;
+    width: 480px;
+    height: 480px;
+    border: 12px solid #2348C7;
+    border-radius: 50%;
+    opacity: 0.35;
+    z-index: -1;
+}
+
+body::before {
+    top: -220px;
+    left: -220px;
+}
+
+body::after {
+    bottom: -220px;
+    right: -220px;
+}
+
+.curve {
+    position: fixed;
+    width: 420px;
+    height: 420px;
+    border: 12px solid #D4D7DE;
+    border-radius: 50%;
+    opacity: 0.45;
+    z-index: -1;
+}
+
+.curve.one {
+    top: 55%;
+    left: -200px;
+}
+
+.curve.two {
+    top: -150px;
+    right: -20px;
+}
+
+.curve.three {
+    bottom: -150px;
+    right: 160px;
+}
+
+.header {
+    text-align: center;
+    margin-top: 55px;
+}
+
+.header h1 {
+    color: #8D8D8D;
+    font-size: 32px;
+    font-weight: 600;
+}
+
+.header p {
+    color: #A5A5A5;
+    font-size: 13px;
+    margin-top: 4px;
+}
+
+.container {
+    width: 480px;
+    max-width: 90%;
+    margin: 40px auto;
+    padding: 40px 45px;
+    background: #fff;
+    border-radius: 18px;
+    border: 3px solid hsl(226, 74%, 88%);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.back-icon {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.reset-icon {
+    width: 28px;
+    height: 28px;
+    display: block;
+    object-fit: contain;
+}
+
+.container h2 {
+    text-align: center;
+    color: #1D3FBF;
+    font-size: 32px;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.step {
+    width: 100%;
+}
+
+.step[hidden] {
+    display: none;
+}
+
+.step-text {
+    text-align: center;
+    color: #6A6A6A;
+    font-size: 13px;
+    margin-bottom: 22px;
+}
+
+.method-switch {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.method-btn {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #cfd5e4;
+    background: #f6f8ff;
+    color: #2442ab;
+    font-size: 12px;
+    cursor: pointer;
+    margin-top: 0;
+}
+
+.method-btn.is-active {
+    background: #2348C7;
+    border-color: #2348C7;
+    color: #fff;
+}
+
+label {
+    display: block;
+    font-size: 12px;
+    margin-bottom: 4px;
+    color: #505050;
+}
+
+input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #D6D6D6;
+    border-radius: 6px;
+    font-size: 12px;
+    margin-bottom: 18px;
+    box-sizing: border-box;
+}
+
+button {
+    width: 100%;
+    padding: 11px;
+    background: #2348C7;
+    border: none;
+    color: white;
+    font-size: 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 5px;
+}
+
+button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.secondary-btn {
+    margin-top: 8px;
+    background: #ffffff;
+    border: 1px solid #2348C7;
+    color: #2348C7;
+}
+
+.otp-inputs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin: 4px 0 18px;
+}
+
+.otp-digit {
+    text-align: center;
+    font-size: 22px;
+    font-weight: 600;
+    padding: 12px 0;
+    margin-bottom: 0;
+}
+
+.otp-digit:focus {
+    outline: 2px solid #2348C7;
+    border-color: #2348C7;
+}
+
+.form-message {
+    min-height: 18px;
+    margin: 14px 0 0;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.form-message.error {
+    color: #c91f1f;
+}
+
+.form-message.success {
+    color: #1f7a38;
+}
+
+.input-invalid {
+    border-color: #c91f1f;
+}
+
+.return {
+    margin-top: 18px;
+    text-align: center;
+    font-size: 13px;
+}
+
+.return a {
+    color: #000;
+    text-decoration: none;
+}
+
+@media (max-width: 600px) {
+    .header h1 {
+        font-size: 26px;
+    }
+
+    .container {
+        padding: 28px 22px;
+        margin: 24px auto;
+    }
+
+    .container h2 {
+        font-size: 28px;
+    }
+}

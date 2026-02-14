@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecodrive - Booking Success</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="success.css">
+</head>
+<body>
+    <div class="bg-shape bg-left"></div>
+    <div class="bg-shape bg-right"></div>
+
+    <nav class="navbar">
+        <div class="logo">ECODRIVE</div>
+
+        <div class="nav-right">
+            <ul class="nav-links">
+                <li><a href="../userhome.html">Home</a></li>
+                <li><a href="../bookings/bookings.html">Bookings</a></li>
+                <li><a href="../contact/contact.html">Contact</a></li>
+                <li><a href="../priv,rep/repair.html">Repair Booking</a></li>
+            </ul>
+
+            <div class="profile-menu">
+                <button class="profile-btn" aria-label="Profile">
+                    <img src="../userhomelogo.jpg" alt="Profile">
+                </button>
+
+                <div class="dropdown">
+                    <a href="../../Usersetting.html/settings.html">Account</a>
+                    <a href="../../Usersetting.html/settings.html#orderSection">Order Status</a>
+                    <a href="../../log in.html">Log Out</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="success-layout">
+        <section class="success-card" aria-live="polite">
+            <div class="check-icon">&#10003;</div>
+            <h1>Booking Confirmed</h1>
+            <p id="success-message">Your order has been submitted successfully.</p>
+            <p id="success-order">Order ID: -</p>
+
+            <div class="action-stack">
+                <a class="btn-primary" href="../bookings/bookings.html">Go to My Bookings</a>
+                <a class="btn-secondary" href="../userhome.html">Back to Home</a>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        (function () {
+            const profileBtn = document.querySelector(".profile-menu .profile-btn");
+            const dropdown = document.querySelector(".profile-menu .dropdown");
+            const successMessage = document.getElementById("success-message");
+            const successOrder = document.getElementById("success-order");
+
+            if (profileBtn && dropdown) {
+                profileBtn.addEventListener("click", function (event) {
+                    event.stopPropagation();
+                    dropdown.classList.toggle("show");
+                });
+
+                dropdown.addEventListener("click", function (event) {
+                    event.stopPropagation();
+                });
+
+                document.addEventListener("click", function () {
+                    dropdown.classList.remove("show");
+                });
+            }
+
+            function safeParse(raw) {
+                try {
+                    return JSON.parse(raw);
+                } catch (_error) {
+                    return null;
+                }
+            }
+
+            const latest = safeParse(localStorage.getItem("latestBooking"));
+            if (latest && typeof latest === "object") {
+                const orderId = String(latest.orderId || latest.id || "-");
+                const model = String(latest.model || latest.productName || "E-Bike");
+                const service = String(latest.service || "Delivery");
+
+                successOrder.textContent = "Order ID: " + orderId;
+                if (service === "Installment") {
+                    successMessage.textContent = "Your installment application for " + model + " is now under review.";
+                } else {
+                    successMessage.textContent = "Your " + service.toLowerCase() + " booking for " + model + " has been submitted.";
+                }
+            }
+        })();
+    </script>
+</body>
+</html>

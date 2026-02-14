@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecodrive - Payment</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="booking.css">
+</head>
+<body>
+    <div class="bg-shape bg-left"></div>
+    <div class="bg-shape bg-right"></div>
+
+    <nav class="navbar">
+        <div class="logo">ECODRIVE</div>
+
+        <div class="nav-right">
+            <ul class="nav-links">
+                <li><a href="../userhome.html">Home</a></li>
+                <li><a href="../bookings/bookings.html">Bookings</a></li>
+                <li><a href="../contact/contact.html">Contact</a></li>
+                <li><a href="../priv,rep/repair.html">Repair Booking</a></li>
+            </ul>
+
+            <div class="profile-menu">
+                <button class="profile-btn" aria-label="Profile">
+                    <img src="../userhomelogo.jpg" alt="Profile">
+                </button>
+
+                <div class="dropdown">
+                    <a href="../../Usersetting.html/settings.html">Account</a>
+                    <a href="../../Usersetting.html/settings.html#orderSection">Order Status</a>
+                    <a href="../../log in.html">Log Out</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="checkout-layout">
+        <section class="order-card">
+            <h1>Order Summary</h1>
+
+            <div class="delivery-actions" role="group" aria-label="Delivery Options">
+                <button type="button" class="mini-btn active" data-service="Delivery">Deliver</button>
+                <button type="button" class="mini-btn" data-service="Pick Up">Pick up</button>
+                <button type="button" class="mini-btn" data-service="Installment">Installment</button>
+            </div>
+
+            <form class="order-form" id="order-form" novalidate>
+                <h2>Customer Information</h2>
+                <input id="full-name" type="text" name="full_name" placeholder="Full name" autocomplete="name" required>
+                <input id="email" type="email" name="email" placeholder="Email" autocomplete="email" required>
+                <input id="phone" type="tel" name="phone" placeholder="Phone Number" autocomplete="tel" inputmode="tel" required>
+                <p id="form-error" class="form-error" aria-live="polite"></p>
+
+                <h2>Payment Method</h2>
+                <div class="payment-options" role="group" aria-label="Payment Method">
+                    <button type="button" class="pay-btn active" data-payment="GCASH">
+                        <img src="../gcash.png" alt="">
+                        <span>GCASH</span>
+                    </button>
+                    <button type="button" class="pay-btn" data-payment="MAYA">
+                        <img src="../Paymaya.png" alt="">
+                        <span>MAYA</span>
+                    </button>
+                    <button type="button" class="pay-btn" data-payment="CASH ON DELIVERY">
+                        <img src="../Cod.png" alt="">
+                        <span>CASH ON DELIVERY</span>
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <aside class="summary-card">
+            <h2 id="summary-model">SELECTED E-BIKE</h2>
+            <p class="summary-subtitle" id="summary-subtitle">E-Bike</p>
+
+            <img id="summary-image" src="../image 1.png" alt="Selected E-Bike">
+
+            <label class="ship-label" for="ship-address">Shipping Address</label>
+            <input class="ship-input" id="ship-address" type="text" placeholder="Enter shipping address">
+
+            <section class="ship-map-panel" id="ship-map-panel" aria-label="Shipping address map">
+                <div class="ship-map-actions">
+                    <button id="find-address-btn" type="button" class="ship-map-btn">Find on Map</button>
+                    <button id="use-location-btn" type="button" class="ship-map-btn secondary">Use My Location</button>
+                </div>
+                <iframe
+                    id="ship-map-frame"
+                    class="ship-map-frame"
+                    title="Shipping map preview"
+                    loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade"
+                    src="https://www.openstreetmap.org/export/embed.html?bbox=120.9400%2C14.5200%2C121.0600%2C14.6600&layer=mapnik&marker=14.5995%2C120.9842"></iframe>
+                <p id="ship-map-status" class="ship-map-status" aria-live="polite">Map preview updates when you change the address.</p>
+            </section>
+
+            <div class="price-lines">
+                <p class="line-item"><span>Subtotal</span><span id="summary-subtotal">&#8369;0.00</span></p>
+                <p class="line-item"><span>Shipping Fee</span><span id="summary-shipping">&#8369;0.00</span></p>
+                <p class="line-item total"><span>Total</span><span id="summary-total">&#8369;0.00</span></p>
+            </div>
+
+            <button id="confirm-btn" type="button" class="confirm-btn">Confirm Booking</button>
+        </aside>
+    </main>
+
+    <section class="payment-qr-modal" id="payment-qr-modal" aria-hidden="true">
+        <div class="payment-qr-shell" id="payment-qr-shell">
+            <button type="button" class="payment-qr-close" id="payment-qr-close" aria-label="Close QR modal">x</button>
+
+            <div class="payment-qr-brand">
+                <img id="payment-brand-logo" src="../gcash.png" alt="Wallet logo">
+                <span id="payment-brand-name">GCash</span>
+            </div>
+
+            <div class="payment-qr-card">
+                <p class="payment-qr-headline">Scan to Pay</p>
+                <button type="button" class="payment-open-app" id="payment-open-app">Open App</button>
+                <a id="payment-open-browser" class="payment-open-browser" href="#" target="_blank" rel="noopener">Open Browser Checkout</a>
+                <p class="payment-qr-amount" id="payment-qr-amount">Amount: &#8369;0.00</p>
+                <p class="payment-qr-ref" id="payment-qr-ref">Reference: -</p>
+                <img class="payment-qr-image" id="payment-qr-image" src="../gcash.png" alt="Payment QR">
+                <p class="payment-qr-note">Scan this QR from your phone wallet app, then click Done to complete your booking.</p>
+
+                <div class="payment-qr-actions">
+                    <button type="button" class="payment-qr-done" id="payment-qr-done">Done</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script type="text/plain" id="booking-legacy-script">
+        (function () {
+            const profileBtn = document.querySelector(".profile-menu .profile-btn");
+            const dropdown = document.querySelector(".profile-menu .dropdown");
+            const serviceButtons = Array.from(document.querySelectorAll(".mini-btn[data-service]"));
+            const paymentButtons = Array.from(document.querySelectorAll(".pay-btn[data-payment]"));
+            const formError = document.getElementById("form-error");
+            const fullNameInput = document.getElementById("full-name");
+            const emailInput = document.getElementById("email");
+            const phoneInput = document.getElementById("phone");
+            const shipAddressInput = document.getElementById("ship-address");
+            const summaryModel = document.getElementById("summary-model");
+            const summarySubtitle = document.getElementById("summary-subtitle");
+            const summaryImage = document.getElementById("summary-image");
+            const subtotalEl = document.getElementById("summary-subtotal");
+            const shippingEl = document.getElementById("summary-shipping");
+            const totalEl = document.getElementById("summary-total");
+            const confirmBtn = document.getElementById("confirm-btn");
+
+            const qrModal = document.getElementById("payment-qr-modal");
+            const qrShell = document.getElementById("payment-qr-shell");
+            const qrClose = document.getElementById("payment-qr-close");
+            const qrBrandLogo = document.getElementById("payment-brand-logo");
+            const qrBrandName = document.getElementById("payment-brand-name");
+            const qrAmount = document.getElementById("payment-qr-amount");
+            const qrImage = document.getElementById("payment-qr-image");
+            const qrOpenApp = document.getElementById("payment-open-app");
+            const qrDone = document.getElementById("payment-qr-done");
+
+            const INSTALLMENT_CHECKOUT_KEY = "ecodrive_installment_checkout";
+            const INSTALLMENT_FORM_KEY = "ecodrive_installment_form";
+            const CURRENT_USER_KEY = "ecodrive_current_user_email";
+            const bookingStorageKeys = ["ecodrive_bookings", "ecodrive_orders", "orders"];
+
+            let selectedService = "Delivery";
+            let selectedPayment = "GCASH";
+            let pendingOrder = null;
+
+            if (profileBtn && dropdown) {
+                profileBtn.addEventListener("click", function (event) {
+                    event.stopPropagation();
+                    dropdown.classList.toggle("show");
+                });
+
+                dropdown.addEventListener("click", function (event) {
+                    event.stopPropagation();
+                });
+
+                document.addEventListener("click", function () {
+                    dropdown.classList.remove("show");
+                });
+            }
+
+            function safeParse(raw) {
+                try {
+                    return JSON.parse(raw);
+                } catch (_error) {
+                    return null;
+                }
+            }
+
+            function formatPeso(amount) {
+                const value = Number(amount || 0);
+                return "&#8369;" + value.toLocaleString("en-PH", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+
+            function getCurrentUserEmail() {
+                const localValue = (localStorage.getItem(CURRENT_USER_KEY) || "").trim().toLowerCase();
+                if (localValue) return localValue;
+                return (sessionStorage.getItem(CURRENT_USER_KEY) || "").trim().toLowerCase();
+            }
+
+            function getFallbackBikeByReferrer() {
+                const referrer = document.referrer || "";
+                const match = referrer.match(/ebike(\d+)\.0\.html/i);
+                const id = match ? Number(match[1]) : 0;
+                const map = {
+                    1: { model: "BLITZ 2000", total: 68000, image: "../image 1.png", subtitle: "2-Wheel" },
+                    2: { model: "BLITZ 1200", total: 45000, image: "../image 2.png", subtitle: "2-Wheel" },
+                    3: { model: "FUN 1500 FI", total: 74000, image: "../image 3.png", subtitle: "2-Wheel" },
+                    4: { model: "CANDY 800", total: 58000, image: "../image 4.png", subtitle: "2-Wheel" },
+                    5: { model: "BLITZ 200R", total: 74000, image: "../image 5.png", subtitle: "2-Wheel" },
+                    6: { model: "TRAVELLER 1500", total: 79000, image: "../image 6.png", subtitle: "2-Wheel" },
+                    7: { model: "ECONO 500 MP", total: 51500, image: "../image 7.png", subtitle: "2-Wheel" },
+                    8: { model: "ECONO 350 MINI-II", total: 58000, image: "../image 8.png", subtitle: "2-Wheel" },
+                    9: { model: "ECARGO 100", total: 72500, image: "../image 9.png", subtitle: "3-Wheel" },
+                    10: { model: "ECONO 650 MP", total: 65000, image: "../image 10.png", subtitle: "3-Wheel" },
+                    11: { model: "ECAB 100V V2", total: 51500, image: "../image 11.png", subtitle: "3-Wheel" },
+                    12: { model: "ECONO 800 MP II", total: 67000, image: "../image 12.png", subtitle: "3-Wheel" },
+                    13: { model: "E-CARGO 800", total: 205000, image: "../image 13.png", subtitle: "4-Wheel" },
+                    14: { model: "E-CAB MAX 1500", total: 130000, image: "../image 14.png", subtitle: "4-Wheel" },
+                    15: { model: "E-CAB 1000", total: 75000, image: "../image 15.png", subtitle: "4-Wheel" },
+                    16: { model: "ECONO 800 MP", total: 100000, image: "../image 16.png", subtitle: "4-Wheel" }
+                };
+                return map[id] || null;
+            }
+
+            function extractSelection(value) {
+                if (!value || typeof value !== "object") return null;
+                const model = String(value.model || value.productName || value.itemName || value.name || "").trim();
+                const subtotal = Number(value.total || value.price || value.amount || 0);
+                const image = String(value.bikeImage || value.image || value.img || "").trim();
+                const subtitle = String(value.subtitle || value.category || value.type || "").trim();
+
+                if (!model && !subtotal && !image) return null;
+                return {
+                    model: model || "Ecodrive E-Bike",
+                    total: Number.isFinite(subtotal) && subtotal > 0 ? subtotal : 0,
+                    image: image || "../image 1.png",
+                    subtitle: subtitle || "E-Bike"
+                };
+            }
+
+            function getSelectedBike() {
+                const params = new URLSearchParams(window.location.search);
+                const queryModel = params.get("model");
+                const queryTotal = Number(params.get("total") || params.get("price") || 0);
+                const queryImage = params.get("image");
+                const querySubtitle = params.get("subtitle") || params.get("category");
+                if (queryModel || queryTotal || queryImage) {
+                    return {
+                        model: String(queryModel || "Ecodrive E-Bike"),
+                        total: Number.isFinite(queryTotal) && queryTotal > 0 ? queryTotal : 68000,
+                        image: String(queryImage || "../image 1.png"),
+                        subtitle: String(querySubtitle || "E-Bike")
+                    };
+                }
+
+                const candidates = [
+                    safeParse(localStorage.getItem("ecodrive_checkout_selection")),
+                    safeParse(localStorage.getItem("ecodrive_selected_bike")),
+                    safeParse(localStorage.getItem("selectedBike")),
+                    safeParse(localStorage.getItem("checkout_selection")),
+                    safeParse(localStorage.getItem("latestBooking"))
+                ];
+
+                for (let i = 0; i < candidates.length; i += 1) {
+                    const selected = extractSelection(candidates[i]);
+                    if (selected) return selected;
+                }
+
+                const fallback = getFallbackBikeByReferrer();
+                if (fallback) return fallback;
+
+                return {
+                    model: "Ecodrive E-Bike",
+                    total: 68000,
+                    image: "../image 1.png",
+                    subtitle: "E-Bike"
+                };
+            }
+
+            const selectedBike = getSelectedBike();
+
+            function updateSummary() {
+                const subtotal = Number(selectedBike.total || 0);
+                const shippingFee = selectedService === "Delivery" ? 250 : 0;
+                const grandTotal = subtotal + shippingFee;
+
+                summaryModel.textContent = selectedBike.model.toUpperCase();
+                summarySubtitle.textContent = selectedBike.subtitle || "E-Bike";
+                summaryImage.src = selectedBike.image || "../image 1.png";
+                subtotalEl.innerHTML = formatPeso(subtotal);
+                shippingEl.innerHTML = formatPeso(shippingFee);
+                totalEl.innerHTML = formatPeso(grandTotal);
+
+                if (selectedService === "Delivery") {
+                    shipAddressInput.disabled = false;
+                    shipAddressInput.placeholder = "Enter shipping address";
+                } else if (selectedService === "Pick Up") {
+                    shipAddressInput.disabled = true;
+                    shipAddressInput.value = "";
+                    shipAddressInput.placeholder = "Not needed for pick up";
+                } else {
+                    shipAddressInput.disabled = true;
+                    shipAddressInput.value = "";
+                    shipAddressInput.placeholder = "Installment flow will continue";
+                }
+            }
+
+            function clearError() {
+                formError.textContent = "";
+                [fullNameInput, emailInput, phoneInput, shipAddressInput].forEach(function (input) {
+                    input.classList.remove("invalid");
+                });
+            }
+
+            function showError(input, message) {
+                if (input) input.classList.add("invalid");
+                formError.textContent = message;
+            }
+
+            function setActiveButton(buttons, activeBtn) {
+                buttons.forEach(function (button) {
+                    button.classList.toggle("active", button === activeBtn);
+                });
+            }
+
+            function appendRecordToStorage(storageKey, record) {
+                const parsed = safeParse(localStorage.getItem(storageKey));
+                const list = Array.isArray(parsed) ? parsed : [];
+                list.push(record);
+                localStorage.setItem(storageKey, JSON.stringify(list));
+            }
+
+            function saveBooking(record) {
+                bookingStorageKeys.forEach(function (key) {
+                    appendRecordToStorage(key, record);
+                });
+                localStorage.setItem("latestBooking", JSON.stringify(record));
+            }
+
+            function buildOrderDraft() {
+                const subtotal = Number(selectedBike.total || 0);
+                const shippingFee = selectedService === "Delivery" ? 250 : 0;
+                const orderId = "EC-" + Date.now();
+
+                return {
+                    orderId: orderId,
+                    fullName: (fullNameInput.value || "").trim(),
+                    email: (emailInput.value || "").trim().toLowerCase(),
+                    phone: (phoneInput.value || "").trim(),
+                    model: selectedBike.model,
+                    bikeImage: selectedBike.image,
+                    subtotal: subtotal,
+                    shippingFee: shippingFee,
+                    total: subtotal + shippingFee,
+                    payment: selectedService === "Installment" ? "Installment" : selectedPayment,
+                    service: selectedService,
+                    status: selectedService === "Installment" ? "Application Review" : "Pending review",
+                    fulfillmentStatus: selectedService === "Pick Up" ? "Ready to Pick up" : (selectedService === "Installment" ? "Under Review" : "In Process"),
+                    shippingAddress: selectedService === "Delivery" ? (shipAddressInput.value || "").trim() : "",
+                    userEmail: getCurrentUserEmail(),
+                    createdAt: new Date().toISOString()
+                };
+            }
+
+            function validateInputs() {
+                clearError();
+
+                const name = (fullNameInput.value || "").trim();
+                const email = (emailInput.value || "").trim();
+                const phone = (phoneInput.value || "").trim();
+
+                if (!name) {
+                    showError(fullNameInput, "Please enter your full name.");
+                    return false;
+                }
+                if (!email) {
+                    showError(emailInput, "Please enter your email.");
+                    return false;
+                }
+                if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+                    showError(emailInput, "Please enter a valid email address.");
+                    return false;
+                }
+                if (!phone || phone.length < 7) {
+                    showError(phoneInput, "Please enter a valid phone number.");
+                    return false;
+                }
+                if (selectedService === "Delivery") {
+                    const address = (shipAddressInput.value || "").trim();
+                    if (!address) {
+                        showError(shipAddressInput, "Shipping address is required for delivery.");
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            function openQrModal(walletName, amount) {
+                const isMaya = walletName === "MAYA";
+                qrShell.classList.toggle("wallet-maya", isMaya);
+                qrBrandName.textContent = isMaya ? "Maya" : "GCash";
+                qrBrandLogo.src = isMaya ? "../Paymaya.png" : "../gcash.png";
+                qrBrandLogo.alt = isMaya ? "Maya logo" : "GCash logo";
+                qrImage.src = isMaya ? "../Paymaya.png" : "../gcash.png";
+                qrImage.alt = isMaya ? "Maya payment code" : "GCash payment code";
+                qrAmount.innerHTML = "Amount: " + formatPeso(amount);
+                qrModal.classList.add("open");
+                qrModal.setAttribute("aria-hidden", "false");
+            }
+
+            function closeQrModal() {
+                qrModal.classList.remove("open");
+                qrModal.setAttribute("aria-hidden", "true");
+            }
+
+            serviceButtons.forEach(function (button) {
+                button.addEventListener("click", function () {
+                    selectedService = button.getAttribute("data-service") || "Delivery";
+                    setActiveButton(serviceButtons, button);
+                    updateSummary();
+                    clearError();
+                });
+            });
+
+            paymentButtons.forEach(function (button) {
+                button.addEventListener("click", function () {
+                    selectedPayment = button.getAttribute("data-payment") || "GCASH";
+                    setActiveButton(paymentButtons, button);
+                    clearError();
+                });
+            });
+
+            confirmBtn.addEventListener("click", function () {
+                if (!validateInputs()) {
+                    return;
+                }
+
+                const order = buildOrderDraft();
+
+                if (order.service === "Installment") {
+                    localStorage.setItem(INSTALLMENT_CHECKOUT_KEY, JSON.stringify(order));
+                    localStorage.removeItem(INSTALLMENT_FORM_KEY);
+                    window.location.href = "../installment/installment-step1.html";
+                    return;
+                }
+
+                if (order.payment === "CASH ON DELIVERY") {
+                    saveBooking(order);
+                    window.location.href = "success.html";
+                    return;
+                }
+
+                pendingOrder = order;
+                openQrModal(order.payment, order.total);
+            });
+
+            qrClose.addEventListener("click", closeQrModal);
+            qrModal.addEventListener("click", function (event) {
+                if (event.target === qrModal) {
+                    closeQrModal();
+                }
+            });
+
+            qrOpenApp.addEventListener("click", function () {
+                const appUrl = qrBrandName.textContent.toLowerCase().includes("maya")
+                    ? "https://www.maya.ph/"
+                    : "https://www.gcash.com/";
+                window.open(appUrl, "_blank", "noopener");
+            });
+
+            qrDone.addEventListener("click", function () {
+                if (!pendingOrder) {
+                    closeQrModal();
+                    return;
+                }
+
+                saveBooking(pendingOrder);
+                pendingOrder = null;
+                closeQrModal();
+                window.location.href = "success.html";
+            });
+
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape") {
+                    closeQrModal();
+                }
+            });
+
+            const existingEmail = getCurrentUserEmail();
+            if (existingEmail && !emailInput.value) {
+                emailInput.value = existingEmail;
+            }
+
+            updateSummary();
+        })();
+    </script>
+    <script src="booking.js"></script>
+</body>
+</html>

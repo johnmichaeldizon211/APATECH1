@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecodrive - Installment Employment Information</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="installment.css">
+    <script src="installment.js" defer></script>
+</head>
+<body data-step="3">
+    <div class="bg-shape bg-left"></div>
+    <div class="bg-shape bg-right"></div>
+
+    <nav class="navbar">
+        <div class="logo">ECODRIVE</div>
+
+        <div class="nav-right">
+            <ul class="nav-links">
+                <li><a href="../userhome.html">Home</a></li>
+                <li><a href="../bookings/bookings.html">Bookings</a></li>
+                <li><a href="../contact/contact.html">Contact</a></li>
+                <li><a href="../priv,rep/repair.html">Repair Booking</a></li>
+            </ul>
+
+            <div class="profile-menu">
+                <button type="button" class="profile-btn" aria-label="Open profile menu">
+                    <img src="../userhomelogo.jpg" alt="Profile">
+                </button>
+
+                <div class="dropdown">
+                    <a href="../../Usersetting.html/settings.html">Account</a>
+                    <a href="../../Usersetting.html/settings.html#orderSection">Order Status</a>
+                    <a href="../../log in.html">Log Out</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="installment-layout">
+        <header class="page-head">
+            <div>
+                <h1>Installment Application</h1>
+                <p>Employment Information</p>
+            </div>
+
+            <ol class="stepper" aria-label="Installment steps">
+                <li class="done">
+                    <span class="dot">1</span>
+                    <span class="step-copy">ID + Face Verification</span>
+                </li>
+                <li class="done">
+                    <span class="dot">2</span>
+                    <span class="step-copy">Personal Information</span>
+                </li>
+                <li class="active">
+                    <span class="dot">3</span>
+                    <span class="step-copy">Employment Information</span>
+                </li>
+            </ol>
+        </header>
+
+        <section class="installment-card">
+            <form id="installmentStep3Form" novalidate>
+                <div class="form-grid employment-grid">
+                    <label>
+                        <span>Current Employer</span>
+                        <input id="currentEmployer" type="text" required>
+                    </label>
+
+                    <label>
+                        <span>Company Address</span>
+                        <input id="companyAddress" type="text" required>
+                    </label>
+
+                    <label>
+                        <span>Nature of Work</span>
+                        <input id="natureOfWork" type="text" required>
+                    </label>
+
+                    <label>
+                        <span>Monthly Income</span>
+                        <input id="monthlyIncome" type="number" min="1" required>
+                    </label>
+
+                    <label class="field-span-2">
+                        <span>Position / Job Title</span>
+                        <input id="position" type="text" required>
+                    </label>
+                </div>
+
+                <div class="action-row right">
+                    <button type="submit" class="action-btn">Submit Application</button>
+                </div>
+                <p id="step3Error" class="form-error" aria-live="polite"></p>
+            </form>
+        </section>
+    </main>
+</body>
+</html>

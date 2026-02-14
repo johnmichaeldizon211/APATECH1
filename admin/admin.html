@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecodrive Admin Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="topbar-brand">ECODRIVE</div>
+        <div class="topbar-right">
+            <button class="icon-btn" type="button" aria-label="Notifications">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 3a5 5 0 0 0-5 5v2.8c0 .8-.3 1.5-.8 2.1L4.7 15a1 1 0 0 0 .8 1.6h13a1 1 0 0 0 .8-1.6l-1.5-2.1a3.5 3.5 0 0 1-.8-2.1V8a5 5 0 0 0-5-5Zm0 18a2.3 2.3 0 0 0 2.2-1.7H9.8A2.3 2.3 0 0 0 12 21Z"/>
+                </svg>
+            </button>
+            <div class="divider"></div>
+            <span class="topbar-admin">ADMIN</span>
+        </div>
+    </header>
+
+    <div class="admin-layout">
+        <aside class="sidebar">
+            <h2 class="sidebar-title">ECODRIVE<br>ADMIN</h2>
+
+            <nav class="sidebar-nav">
+                <a class="side-btn active" href="#">Dashboard</a>
+                <a class="side-btn" href="adminorder.html">Booking Request</a>
+                <a class="side-btn" href="adminprice.html">Price Management</a>
+                <a class="side-btn" href="adminstock.html">Stocks</a>
+                <a class="side-btn" href="adminuser.html">Users</a>
+            </nav>
+
+            <a class="logout-btn" href="../log in.html">Logout</a>
+        </aside>
+
+        <main class="content">
+            <section class="panel dashboard-title">
+                <h1>Dashboard</h1>
+            </section>
+
+            <section class="stats-grid">
+                <article class="panel stat-card">
+                    <h3>Total Sales</h3>
+                    <p class="stat-value sales">₱ 00.00</p>
+                </article>
+                <article class="panel stat-card">
+                    <h3>Total Bookings</h3>
+                    <p class="stat-value">0</p>
+                </article>
+                <article class="panel stat-card">
+                    <h3>Pending</h3>
+                    <p class="stat-value">0</p>
+                </article>
+                <article class="panel stat-card">
+                    <h3>Total Users</h3>
+                    <p class="stat-value">0</p>
+                </article>
+            </section>
+
+            <section class="bottom-grid">
+                <div class="stack-cards">
+                    <article class="panel mini-card">
+                        <h3>Total Approved</h3>
+                    </article>
+                    <article class="panel mini-card">
+                        <h3>Total Reject</h3>
+                    </article>
+                </div>
+
+                <article class="panel chart-card">
+                    <h3>Sales Overview</h3>
+                    <div class="chart-wrap" aria-label="Sales Overview Chart">
+                        <div class="bars">
+                            <div class="bar-group">
+                                <span class="bar c1" style="height:58%"></span>
+                                <span class="bar c2" style="height:72%"></span>
+                                <span class="bar c3" style="height:50%"></span>
+                            </div>
+                            <div class="bar-group">
+                                <span class="bar c1" style="height:48%"></span>
+                                <span class="bar c2" style="height:36%"></span>
+                                <span class="bar c3" style="height:42%"></span>
+                            </div>
+                            <div class="bar-group">
+                                <span class="bar c1" style="height:22%"></span>
+                                <span class="bar c2" style="height:28%"></span>
+                                <span class="bar c3" style="height:20%"></span>
+                            </div>
+                            <div class="bar-group">
+                                <span class="bar c1" style="height:40%"></span>
+                                <span class="bar c2" style="height:44%"></span>
+                                <span class="bar c3" style="height:38%"></span>
+                            </div>
+                            <div class="bar-group">
+                                <span class="bar c1" style="height:32%"></span>
+                                <span class="bar c2" style="height:52%"></span>
+                                <span class="bar c3" style="height:30%"></span>
+                            </div>
+                            <div class="bar-group">
+                                <span class="bar c1" style="height:56%"></span>
+                                <span class="bar c2" style="height:46%"></span>
+                                <span class="bar c3" style="height:16%"></span>
+                            </div>
+                            <div class="bar-group">
+                                <span class="bar c1" style="height:42%"></span>
+                                <span class="bar c2" style="height:60%"></span>
+                                <span class="bar c3" style="height:34%"></span>
+                            </div>
+                            <div class="bar-group">
+                                <span class="bar c1" style="height:14%"></span>
+                                <span class="bar c2" style="height:40%"></span>
+                                <span class="bar c3" style="height:12%"></span>
+                            </div>
+                            <div class="bar-group">
+                                <span class="bar c1" style="height:66%"></span>
+                                <span class="bar c2" style="height:70%"></span>
+                                <span class="bar c3" style="height:54%"></span>
+                            </div>
+                            <div class="bar-group">
+                                <span class="bar c1" style="height:24%"></span>
+                                <span class="bar c2" style="height:64%"></span>
+                                <span class="bar c3" style="height:80%"></span>
+                            </div>
+                            <div class="bar-group">
+                                <span class="bar c1" style="height:20%"></span>
+                                <span class="bar c2" style="height:26%"></span>
+                                <span class="bar c3" style="height:18%"></span>
+                            </div>
+                            <div class="bar-group">
+                                <span class="bar c1" style="height:62%"></span>
+                                <span class="bar c2" style="height:16%"></span>
+                                <span class="bar c3" style="height:22%"></span>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

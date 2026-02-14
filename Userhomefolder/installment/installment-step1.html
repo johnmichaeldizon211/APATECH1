@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecodrive - Installment ID Verification</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="installment.css">
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js" defer></script>
+    <script src="installment.js" defer></script>
+</head>
+<body data-step="1-id">
+    <div class="bg-shape bg-left"></div>
+    <div class="bg-shape bg-right"></div>
+
+    <nav class="navbar">
+        <div class="logo">ECODRIVE</div>
+
+        <div class="nav-right">
+            <ul class="nav-links">
+                <li><a href="../userhome.html">Home</a></li>
+                <li><a href="../bookings/bookings.html">Bookings</a></li>
+                <li><a href="../contact/contact.html">Contact</a></li>
+                <li><a href="../priv,rep/repair.html">Repair Booking</a></li>
+            </ul>
+
+            <div class="profile-menu">
+                <button type="button" class="profile-btn" aria-label="Open profile menu">
+                    <img src="../userhomelogo.jpg" alt="Profile">
+                </button>
+
+                <div class="dropdown">
+                    <a href="../../Usersetting.html/settings.html">Account</a>
+                    <a href="../../Usersetting.html/settings.html#orderSection">Order Status</a>
+                    <a href="../../log in.html">Log Out</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="installment-layout">
+        <header class="page-head">
+            <div>
+                <h1>Installment Application</h1>
+                <p>ID Verification</p>
+            </div>
+
+            <ol class="stepper" aria-label="Installment steps">
+                <li class="active">
+                    <span class="dot">1</span>
+                    <span class="step-copy">Proof of Identification</span>
+                </li>
+                <li>
+                    <span class="dot">2</span>
+                    <span class="step-copy">Personal Information</span>
+                </li>
+                <li>
+                    <span class="dot">3</span>
+                    <span class="step-copy">Employment Information</span>
+                </li>
+            </ol>
+        </header>
+
+        <section class="installment-card">
+            <form id="installmentIdForm" novalidate>
+                <div class="top-row">
+                    <label class="id-type-field" for="idType">
+                        <span>Type of ID</span>
+                        <select id="idType" name="idType" required>
+                            <option value="">Select ID</option>
+                            <option value="Passport">Passport</option>
+                            <option value="Driver License">Driver License</option>
+                            <option value="National ID">National ID</option>
+                            <option value="UMID">UMID</option>
+                        </select>
+                    </label>
+                </div>
+
+                <p class="scan-flow-note">Open camera, scan your government ID, and complete verification before proceeding.</p>
+
+                <div class="scan-grid">
+                    <article class="scan-card">
+                        <h2>ID Camera</h2>
+                        <video id="idVideo" class="scan-video" playsinline autoplay muted></video>
+                    </article>
+
+                    <article class="scan-card">
+                        <h2>Captured ID</h2>
+                        <canvas id="idCanvas" class="scan-canvas"></canvas>
+                    </article>
+                </div>
+
+                <div class="scan-actions">
+                    <button type="button" class="scan-btn" id="openIdCameraBtn">Open Camera</button>
+                    <button type="button" class="scan-btn primary" id="captureIdBtn">Scan ID</button>
+                </div>
+
+                <p id="idStatus" class="scan-status pending">ID not verified yet.</p>
+
+                <div class="action-row right">
+                    <button type="submit" class="action-btn">Next</button>
+                </div>
+                <p id="idStepError" class="form-error" aria-live="polite"></p>
+            </form>
+        </section>
+    </main>
+</body>
+</html>

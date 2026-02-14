@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forgot Password</title>
+<link rel="stylesheet" href="forgot.css">
+</head>
+<body>
+
+<div class="curve one"></div>
+<div class="curve two"></div>
+<div class="curve three"></div>
+
+<div class="header">
+    <h1>Ecodrive</h1>
+    <p>Baliwag, Bulacan</p>
+</div>
+
+<main class="container" aria-live="polite">
+    <div class="back-icon" aria-hidden="true">
+        <img src="LOCK.jpg" alt="Reset password" class="reset-icon">
+    </div>
+
+    <h2>Forgot Password?</h2>
+
+    <section class="step is-active" data-step="contact" id="step-contact">
+        <p class="step-text">Choose where to send your 4-digit code.</p>
+
+        <div class="method-switch" role="radiogroup" aria-label="Recovery method">
+            <button
+                type="button"
+                class="method-btn is-active"
+                data-method="email"
+                aria-pressed="true"
+            >
+                Email
+            </button>
+            <button
+                type="button"
+                class="method-btn"
+                data-method="mobile"
+                aria-pressed="false"
+            >
+                Mobile Number
+            </button>
+        </div>
+
+        <label for="contact-input" id="contact-label">Email Address</label>
+        <input id="contact-input" type="email" placeholder="Enter your email" autocomplete="email">
+        <button type="button" id="send-code-btn">Send Code</button>
+    </section>
+
+    <section class="step" data-step="otp" id="step-otp" hidden>
+        <p class="step-text">
+            Enter the 4-digit code sent to
+            <strong id="masked-contact">your contact</strong>.
+        </p>
+
+        <div class="otp-inputs" id="otp-inputs">
+            <input type="text" class="otp-digit" inputmode="numeric" maxlength="1" data-otp-index="0" aria-label="Digit 1">
+            <input type="text" class="otp-digit" inputmode="numeric" maxlength="1" data-otp-index="1" aria-label="Digit 2">
+            <input type="text" class="otp-digit" inputmode="numeric" maxlength="1" data-otp-index="2" aria-label="Digit 3">
+            <input type="text" class="otp-digit" inputmode="numeric" maxlength="1" data-otp-index="3" aria-label="Digit 4">
+        </div>
+
+        <button type="button" id="verify-code-btn">Verify</button>
+        <button type="button" id="resend-code-btn" class="secondary-btn">Send Again</button>
+    </section>
+
+    <section class="step" data-step="password" id="step-password" hidden>
+        <p class="step-text">Code verified. Set your new password.</p>
+
+        <label for="new-password">New Password</label>
+        <input id="new-password" type="password" placeholder="Enter your new password" autocomplete="new-password">
+
+        <label for="confirm-password">Confirm Password</label>
+        <input id="confirm-password" type="password" placeholder="Confirm password" autocomplete="new-password">
+
+        <button type="button" id="reset-password-btn">Confirm</button>
+    </section>
+
+    <p id="form-message" class="form-message" role="status" aria-live="polite"></p>
+
+    <div class="return">
+        &larr; <a href="log in.html">Return back to login page</a>
+    </div>
+</main>
+<script src="forgot.js"></script>
+
+</body>
+</html>

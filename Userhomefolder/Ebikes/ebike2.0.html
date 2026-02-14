@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecodrive - BLITZ 1200</title>
+    <link rel="stylesheet" href="ebike2.css">
+</head>
+<body>
+    <div class="bg-shape bg-left"></div>
+    <div class="bg-shape bg-right"></div>
+
+    <nav class="navbar">
+        <div class="logo">ECODRIVE</div>
+
+        <div class="nav-right">
+                        <ul class="nav-links">
+                <li><a href="../userhome.html">Home</a></li>
+                <li><a href="../bookings/bookings.html">Bookings</a></li>
+                <li><a href="../userhome2.html" class="active">Ebikes Products</a></li>
+                <li><a href="../contact/contact.html">Contact</a></li>
+                <li><a href="../priv,rep/repair.html">Repair Booking</a></li>
+            </ul>
+
+            <div class="profile-menu">
+                <button class="profile-btn" aria-label="Profile">
+                    <img src="../userhomelogo.jpg" alt="Profile">
+                </button>
+
+                <div class="dropdown">
+                    <a href="../../Usersetting.html/settings.html">Account</a>
+                    <a href="../../Usersetting.html/settings.html#orderSection">Order Status</a>
+                    <a href="../../log in.html">Log Out</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="page-wrapper">
+        <section class="left-card">
+            <img src="../image 2.png" class="bike-img" alt="BLITZ 1200 electric scooter" id="bike-image">
+
+            <div class="color-picker">
+                <p class="color-label">Select Color</p>
+                <div class="color-line"></div>
+                <div class="color-dots">
+                    <button type="button" class="dot black" aria-label="Black color" data-color="black" data-image="../2B.png"></button>
+                    <button type="button" class="dot white active" aria-label="White color" data-color="white" data-image="../image 2.png"></button>
+                    <button type="button" class="dot gray" aria-label="Gray color" data-color="gray" data-image="../2G.png"></button>
+                </div>
+                <p class="selected-color" id="selected-color">Selected: White</p>
+            </div>
+        </section>
+
+        <section class="right-card">
+            <h1 class="model-title">MODEL: BLITZ 1200</h1>
+
+            <ul class="spec-list">
+                <li><strong>Power:</strong> 1200 watts</li>
+                <li><strong>Battery:</strong> 60volts 20ah</li>
+                <li><strong>Battery Type:</strong> S.L.A (Sealed Lead Acid)</li>
+                <li><strong>Speed:</strong> 40 - 50 km/h</li>
+                <li><strong>Range:</strong> 50 km</li>
+                <li><strong>Charging time:</strong> 6 - 8 hrs</li>
+            </ul>
+            <div class="price-row">
+                <p class="price">Price: ₱ 45,000.00</p>
+                <button class="check-btn" onclick="location.href='../payment/booking.html'">Book Now</button>
+            </div>
+
+            <div class="bike-page-nav">
+                <a class="bike-nav-btn prev" href="ebike1.0.html" aria-label="Previous ebike">&#8249;</a>
+                <a class="bike-nav-btn next" href="ebike3.0.html" aria-label="Next ebike">&#8250;</a>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        (function () {
+            const profileBtn = document.querySelector('.profile-menu .profile-btn');
+            const dropdown = document.querySelector('.profile-menu .dropdown');
+
+            if (profileBtn && dropdown) {
+                profileBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    dropdown.classList.toggle('show');
+                });
+
+                dropdown.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                });
+
+                document.addEventListener('click', function () {
+                    dropdown.classList.remove('show');
+                });
+            }
+
+            const dots = document.querySelectorAll('.dot');
+            const bikeImage = document.getElementById('bike-image');
+            const selectedColor = document.getElementById('selected-color');
+            if (dots.length === 0) return;
+
+            function forceWhiteBackground(img) {
+                if (!img || !img.complete || img.naturalWidth === 0) return;
+                if (img.src && img.src.startsWith('data:image/')) return;
+                const canvas = document.createElement('canvas');
+                canvas.width = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                if (!ctx) return;
+
+                ctx.drawImage(img, 0, 0);
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+
+                for (let i = 0; i < data.length; i += 4) {
+                    const r = data[i];
+                    const g = data[i + 1];
+                    const b = data[i + 2];
+                    const a = data[i + 3];
+                    const closeToGray = Math.abs(r - g) < 10 && Math.abs(g - b) < 10;
+                    const lightTone = r >= 175 && g >= 175 && b >= 175;
+
+                    if (a > 0 && closeToGray && lightTone) {
+                        data[i] = 255;
+                        data[i + 1] = 255;
+                        data[i + 2] = 255;
+                    }
+                }
+
+                ctx.putImageData(imageData, 0, 0);
+                img.onload = null;
+                img.src = canvas.toDataURL('image/png');
+            }
+
+            dots.forEach((dot) => {
+                dot.addEventListener('click', function () {
+                    dots.forEach((d) => d.classList.remove('active'));
+                    this.classList.add('active');
+
+                    const color = this.dataset.color || 'white';
+                    const targetImage = this.dataset.image;
+
+                    if (bikeImage) {
+                        const applyStates = function () {
+                            bikeImage.classList.remove('color-black', 'color-white', 'color-gray');
+                            bikeImage.classList.add('color-' + color);
+                            forceWhiteBackground(bikeImage);
+                        };
+
+                        if (targetImage) {
+                            bikeImage.onload = applyStates;
+                            bikeImage.src = targetImage;
+                        } else {
+                            applyStates();
+                        }
+                    }
+
+                    if (selectedColor) {
+                        selectedColor.textContent = 'Selected: ' + color.charAt(0).toUpperCase() + color.slice(1);
+                    }
+                });
+            });
+
+            const activeDot = document.querySelector('.dot.active') || dots[0];
+            if (activeDot) activeDot.click();
+        })();
+    </script>
+    <script src="ebike-booking-selection.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

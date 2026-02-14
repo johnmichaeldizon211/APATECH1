@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecodrive - Installment Face Verification</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="installment.css">
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js" defer></script>
+    <script src="installment.js" defer></script>
+</head>
+<body data-step="1-face">
+    <div class="bg-shape bg-left"></div>
+    <div class="bg-shape bg-right"></div>
+
+    <nav class="navbar">
+        <div class="logo">ECODRIVE</div>
+
+        <div class="nav-right">
+            <ul class="nav-links">
+                <li><a href="../userhome.html">Home</a></li>
+                <li><a href="../bookings/bookings.html">Bookings</a></li>
+                <li><a href="../contact/contact.html">Contact</a></li>
+                <li><a href="../priv,rep/repair.html">Repair Booking</a></li>
+            </ul>
+
+            <div class="profile-menu">
+                <button type="button" class="profile-btn" aria-label="Open profile menu">
+                    <img src="../userhomelogo.jpg" alt="Profile">
+                </button>
+
+                <div class="dropdown">
+                    <a href="../../Usersetting.html/settings.html">Account</a>
+                    <a href="../../Usersetting.html/settings.html#orderSection">Order Status</a>
+                    <a href="../../log in.html">Log Out</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="installment-layout compact-layout">
+        <header class="page-head">
+            <div>
+                <h1>Installment Application</h1>
+                <p>Face Verification</p>
+            </div>
+
+            <ol class="stepper" aria-label="Installment steps">
+                <li class="done">
+                    <span class="dot">1</span>
+                    <span class="step-copy">ID Verified</span>
+                </li>
+                <li class="active">
+                    <span class="dot">2</span>
+                    <span class="step-copy">Face Scan</span>
+                </li>
+                <li>
+                    <span class="dot">3</span>
+                    <span class="step-copy">Personal + Employment</span>
+                </li>
+            </ol>
+        </header>
+
+        <section class="installment-card compact-card">
+            <form id="installmentFaceForm" novalidate>
+                <p class="id-summary">Verified ID Type: <strong id="verifiedIdType">-</strong></p>
+                <p class="scan-flow-note">Scan your face and match it with your verified ID.</p>
+
+                <article class="scan-card scan-single">
+                    <h2>Selfie Camera</h2>
+                    <video id="faceVideo" class="scan-video" playsinline autoplay muted></video>
+                    <canvas id="faceCanvas" class="scan-canvas"></canvas>
+
+                    <div class="scan-actions">
+                        <button type="button" class="scan-btn" id="openFaceCameraBtn">Open Camera</button>
+                        <button type="button" class="scan-btn primary" id="captureFaceBtn">Scan Face</button>
+                    </div>
+                </article>
+
+                <p id="faceStatus" class="scan-status pending">Face not verified yet.</p>
+
+                <label class="terms-row" for="termsAgree">
+                    <input type="checkbox" id="termsAgree">
+                    <span>I agree to the terms and conditions for installment application.</span>
+                </label>
+
+                <p class="hardware-note">Use a well-lit area and keep your face centered in the frame.</p>
+
+                <div class="action-row right">
+                    <button type="submit" class="action-btn">Proceed to Step 2</button>
+                </div>
+                <p id="faceStepError" class="form-error" aria-live="polite"></p>
+            </form>
+        </section>
+    </main>
+</body>
+</html>
