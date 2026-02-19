@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -138,6 +138,9 @@
         </form>
     </section>
 
+    <script src="../session.js"></script>
+    <script src="product-catalog.js"></script>
+    <script src="chatbot-brain.js"></script>
     <script>
         (function () {
             const profileBtn = document.querySelector('.profile-menu .profile-btn');
@@ -165,6 +168,9 @@
             const input = document.getElementById('chat-input');
             const body = document.getElementById('chat-body');
             const storageKey = 'ecodrive_chat_messages_v1';
+            const smartReply = (window.EcodriveChatbotBrain && typeof window.EcodriveChatbotBrain.createResponder === 'function')
+                ? window.EcodriveChatbotBrain.createResponder()
+                : null;
 
             if (!(toggle && panel && closeBtn && form && input && body)) {
                 return;
@@ -181,7 +187,7 @@
             }
 
             if (messages.length === 0) {
-                messages = [{ from: 'bot', text: "Hello! I'm Ecodrive Bot. Ask me about our products or services." }];
+                messages = [{ from: 'bot', text: "Hi! I'm Ecodrive Bot. Ask me about Ecodrive ebikes, prices, booking status, payment, or repair." }];
                 localStorage.setItem(storageKey, JSON.stringify(messages));
             }
 
@@ -201,11 +207,8 @@
             }
 
             function botReply(text) {
-                const value = text.toLowerCase();
-                if (value.includes('hi') || value.includes('hello')) return 'Hi there! How can I help you today?';
-                if (value.includes('price') || value.includes('cost')) return 'Our prices vary by model. Which model are you interested in?';
-                if (value.includes('delivery')) return 'We offer pickup and delivery options. Which would you prefer?';
-                return "Thanks! We'll get back to you shortly.";
+                if (smartReply) return smartReply(text);
+                return 'I can help with ebike models, prices, booking status, payment, installment, delivery, and repair.';
             }
 
             function openPanel() {
@@ -253,4 +256,7 @@
     </script>
 </body>
 </html>
+
+
+
 

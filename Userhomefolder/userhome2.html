@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -116,7 +116,7 @@
             <div class="img-wrap"><img src="image 8.png" alt="ECONO 350 MINI-II"></div>
             <div class="card-body">
                 <h3 class="prod-name">ECONO 350 MINI-II</h3>
-                <p class="price">PRICE ₱ 58,000.00</p>
+                <p class="price">PRICE â‚± 58,000.00</p>
                 <button class="btn" onclick="location.href='../Userhomefolder/Ebikes/ebike8.0.html'">Book Now</button>
             </div>
         </article>
@@ -125,7 +125,7 @@
             <div class="img-wrap"><img src="image 9.png" alt="ECARGO 100"></div>
             <div class="card-body">
                 <h3 class="prod-name">ECARGO 100</h3>
-                <p class="price">PRICE ₱ 72,500.00</p>
+                <p class="price">PRICE â‚± 72,500.00</p>
                 <button class="btn" onclick="location.href='../Userhomefolder/Ebikes/ebike9.0.html'">Book Now</button>
             </div>
         </article>
@@ -134,7 +134,7 @@
             <div class="img-wrap"><img src="image 10.png" alt="ECONO 650 MP"></div>
             <div class="card-body">
                 <h3 class="prod-name">ECONO 650 MP</h3>
-                <p class="price">PRICE ₱ 65,000.00</p>
+                <p class="price">PRICE â‚± 65,000.00</p>
                 <button class="btn" onclick="location.href='../Userhomefolder/Ebikes/ebike10.0.html'">Book Now</button>
             </div>
         </article>
@@ -143,7 +143,7 @@
             <div class="img-wrap"><img src="image 11.png" alt="E-CAB 1000 II"></div>
             <div class="card-body">
                 <h3 class="prod-name">ECAB 100V V2</h3>
-                <p class="price">PRICE ₱ 51,500.00</p>
+                <p class="price">PRICE â‚± 51,500.00</p>
                 <button class="btn" onclick="location.href='../Userhomefolder/Ebikes/ebike11.0.html'">Book Now</button>
             </div>
         </article>
@@ -152,7 +152,7 @@
             <div class="img-wrap"><img src="image 12.png" alt="ECONO 800 MP II"></div>
             <div class="card-body">
                 <h3 class="prod-name">ECONO 800 MP II</h3>
-                <p class="price">PRICE ₱ 67,000.00</p>
+                <p class="price">PRICE â‚± 67,000.00</p>
                 <button class="btn" onclick="location.href='../Userhomefolder/Ebikes/ebike12.0.html'">Book Now</button>
             </div>
         </article>
@@ -161,7 +161,7 @@
             <div class="img-wrap"><img src="image 13.png" alt="E-CARGO 800"></div>
             <div class="card-body">
                 <h3 class="prod-name">E-CARGO 800</h3>
-                <p class="price">PRICE ₱ 205,000.00</p>
+                <p class="price">PRICE â‚± 205,000.00</p>
                 <button class="btn" onclick="location.href='../Userhomefolder/Ebikes/ebike13.0.html'">Book Now</button>
             </div>
         </article>
@@ -170,7 +170,7 @@
             <div class="img-wrap"><img src="image 14.png" alt="E-CAB MAX 1500"></div>
             <div class="card-body">
                 <h3 class="prod-name">E-CAB MAX 1500</h3>
-                <p class="price">PRICE ₱ 130,000.00</p>
+                <p class="price">PRICE â‚± 130,000.00</p>
                 <button class="btn" onclick="location.href='../Userhomefolder/Ebikes/ebike14.0.html'">Book Now</button>
             </div>
         </article>
@@ -179,7 +179,7 @@
             <div class="img-wrap"><img src="image 15.png" alt="E-CAB 1000"></div>
             <div class="card-body">
                 <h3 class="prod-name">E-CAB 1000</h3>
-                <p class="price">PRICE ₱ 75,000.00</p>
+                <p class="price">PRICE â‚± 75,000.00</p>
                 <button class="btn" onclick="location.href='../Userhomefolder/Ebikes/ebike15.0.html'">Book Now</button>
             </div>
         </article>
@@ -188,7 +188,7 @@
             <div class="img-wrap"><img src="image 16.png" alt="ECONO 800 MP"></div>
             <div class="card-body">
                 <h3 class="prod-name">ECONO 800 MP</h3>
-                <p class="price">PRICE ₱ 100,000.00</p>
+                <p class="price">PRICE â‚± 100,000.00</p>
                 <button class="btn" onclick="location.href='../Userhomefolder/Ebikes/ebike16.0.html'">Book Now</button>
             </div>
         </article>
@@ -209,8 +209,11 @@
     </form>
 </section>
 
-<script>
-    (function () {
+<script src="../session.js"></script>
+<script src="product-catalog.js"></script>
+<script src="chatbot-brain.js"></script>
+    <script>
+        (function () {
         const profileBtn = document.querySelector('.profile-menu .profile-btn');
         const dropdown = document.querySelector('.profile-menu .dropdown');
 
@@ -236,6 +239,9 @@
         const input = document.getElementById('chat-input');
         const body = document.getElementById('chat-body');
         const storageKey = 'ecodrive_chat_messages_v1';
+            const smartReply = (window.EcodriveChatbotBrain && typeof window.EcodriveChatbotBrain.createResponder === 'function')
+                ? window.EcodriveChatbotBrain.createResponder()
+                : null;
 
         if (!(toggle && panel && closeBtn && form && input && body)) {
             return;
@@ -252,7 +258,7 @@
         }
 
         if (messages.length === 0) {
-            messages = [{ from: 'bot', text: "Hello! I'm Ecodrive Bot. Ask me about our products or services." }];
+            messages = [{ from: 'bot', text: "Hi! I'm Ecodrive Bot. Ask me about Ecodrive ebikes, prices, booking status, payment, or repair." }];
             localStorage.setItem(storageKey, JSON.stringify(messages));
         }
 
@@ -272,12 +278,9 @@
         }
 
         function botReply(text) {
-            const value = text.toLowerCase();
-            if (value.includes('hi') || value.includes('hello')) return 'Hi there! How can I help you today?';
-            if (value.includes('price') || value.includes('cost')) return 'Our prices vary by model. Which model are you interested in?';
-            if (value.includes('delivery')) return 'We offer pickup and delivery options. Which would you prefer?';
-            return "Thanks! We'll get back to you shortly.";
-        }
+                if (smartReply) return smartReply(text);
+                return 'I can help with ebike models, prices, booking status, payment, installment, delivery, and repair.';
+            }
 
         function openPanel() {
             panel.classList.add('open');
@@ -322,9 +325,11 @@
         });
     })();
 </script>
-
 </body>
 </html>
+
+
+
 
 
 

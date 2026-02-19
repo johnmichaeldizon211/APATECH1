@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="adminstock.css">
+    <link rel="stylesheet" href="admin-font-tuning.css">
 </head>
 <body>
     <header class="topbar">
@@ -29,61 +30,95 @@
                 <a class="nav-btn" href="adminprice.html">Price Management</a>
                 <a class="nav-btn active" href="adminstock.html">Stocks</a>
                 <a class="nav-btn" href="adminuser.html">Users</a>
+                <a class="nav-btn" href="adminsettings.html">Settings</a>
             </nav>
 
             <a class="logout-btn" href="../log in.html">Logout</a>
         </aside>
 
         <main class="content">
-            <section class="panel title-panel">
-                <h1>Stocks</h1>
+            <div class="top-actions">
+                <section class="panel title-panel">
+                    <h1>Stocks</h1>
+                </section>
+                <button class="panel add-btn" id="open-add-model" type="button">
+                    <span class="plus" aria-hidden="true">+</span>
+                    <span>Add E-bike</span>
+                </button>
+            </div>
+
+            <p id="stock-status" class="stock-status-message" aria-live="polite">Loading stock data...</p>
+
+            <section class="panel add-form-panel is-hidden" id="stock-add-form-panel" aria-hidden="true">
+                <h2>Add E-bike Model</h2>
+                <form id="stock-add-form" novalidate>
+                    <label for="stock-model-input">Model</label>
+                    <input id="stock-model-input" type="text" placeholder="BLITZ 2200">
+
+                    <label for="stock-category-input">Category</label>
+                    <select id="stock-category-input">
+                        <option value="2-Wheel">2-Wheel</option>
+                        <option value="3-Wheel">3-Wheel</option>
+                        <option value="4-Wheel">4-Wheel</option>
+                        <option value="Other">Other</option>
+                    </select>
+
+                    <label for="stock-price-input">Price</label>
+                    <input id="stock-price-input" type="text" inputmode="decimal" placeholder="68000">
+
+                    <label for="stock-info-input">Info</label>
+                    <textarea id="stock-info-input" rows="2" placeholder="Short info about this e-bike model"></textarea>
+
+                    <label for="stock-image-file-input">Image File</label>
+                    <input id="stock-image-file-input" type="file" accept="image/png,image/jpeg,image/webp">
+
+                    <label for="stock-image-input">Image URL / Path (optional)</label>
+                    <input id="stock-image-input" type="text" placeholder="/Userhomefolder/image 1.png">
+
+                    <label for="stock-detail-input">Detail Page URL (optional)</label>
+                    <input id="stock-detail-input" type="text" placeholder="/Userhomefolder/Ebikes/ebike1.0.html">
+
+                    <div class="form-actions">
+                        <button id="stock-save-btn" type="submit">Save Model</button>
+                        <button id="stock-cancel-btn" type="button" class="secondary">Cancel</button>
+                    </div>
+                    <p id="stock-add-status" class="stock-status-message" aria-live="polite"></p>
+                </form>
+            </section>
+
+            <section class="panel color-panel" id="stock-color-panel">
+                <h2>Color Availability</h2>
+                <label for="stock-color-model-select">Model</label>
+                <select id="stock-color-model-select"></select>
+                <p id="stock-color-status" class="stock-status-message" aria-live="polite"></p>
+                <div id="stock-color-list" class="stock-color-list" aria-live="polite"></div>
             </section>
 
             <section class="stats-grid">
                 <article class="panel stat-card">
                     <h3>Total Models</h3>
-                    <p class="value">16</p>
+                    <p class="value" id="stock-total-models">0</p>
                 </article>
                 <article class="panel stat-card">
                     <h3>Total Available</h3>
-                    <p class="value">16</p>
+                    <p class="value" id="stock-total-available">0</p>
                 </article>
                 <article class="panel stat-card">
                     <h3>Unavailable</h3>
-                    <p class="value">0</p>
+                    <p class="value" id="stock-total-unavailable">0</p>
                 </article>
                 <article class="panel stat-card">
                     <h3>New this Month</h3>
-                    <p class="value">0</p>
+                    <p class="value" id="stock-new-this-month">0</p>
                 </article>
             </section>
 
-            <section class="stock-grid">
-                <article class="panel stock-card">
-                    <p class="model">MODEL: ECONO350 MINI-II</p>
-                    <img src="../Userhomefolder/image 43.png" alt="ECONO350 MINI-II">
-                    <p class="status available">Available</p>
-                </article>
-
-                <article class="panel stock-card">
-                    <p class="model">MODEL: ECONO 500MP</p>
-                    <img src="../Userhomefolder/image 44.png" alt="ECONO 500MP">
-                    <p class="status available">Available</p>
-                </article>
-
-                <article class="panel stock-card">
-                    <p class="model">MODEL: ECONO 800 MP II</p>
-                    <img src="../Userhomefolder/image 46.png" alt="ECONO 800 MP II">
-                    <p class="status available">Available</p>
-                </article>
-
-                <article class="panel stock-card">
-                    <p class="model">MODEL: ECAB 1000 V2</p>
-                    <img src="../Userhomefolder/image 61.png" alt="ECAB 1000 V2">
-                    <p class="status available">Available</p>
-                </article>
-            </section>
+            <section class="stock-grid" id="stock-grid" aria-live="polite"></section>
         </main>
     </div>
+    <script src="../session.js"></script>
+    <script src="adminstock.js"></script>
 </body>
 </html>
+
+

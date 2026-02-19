@@ -1,10 +1,11 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const currentUserKey = "ecodrive_current_user_email";
     const usersKey = "users";
     const API_BASE = String(
-        localStorage.getItem("ecodrive_api_base") ||
-        localStorage.getItem("ecodrive_kyc_api_base") ||
-        ""
+        (window.EcodriveSession && typeof window.EcodriveSession.getApiBase === "function"
+            ? window.EcodriveSession.getApiBase()
+            : localStorage.getItem("ecodrive_api_base")
+                || localStorage.getItem("ecodrive_kyc_api_base")
+                || "http://127.0.0.1:5050")
     )
         .trim()
         .replace(/\/+$/, "");
@@ -16,16 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const usersTableBody = document.getElementById("users-table-body");
     const usersEmptyState = document.getElementById("users-empty-state");
 
-    const currentUser = (
-        localStorage.getItem(currentUserKey) ||
-        sessionStorage.getItem(currentUserKey) ||
-        ""
-    )
-        .trim()
-        .toLowerCase();
-
-    if (currentUser !== "echodrive") {
-        window.location.href = "../log in.html";
+    if (!window.EcodriveSession || typeof window.EcodriveSession.requireRole !== "function" || !window.EcodriveSession.requireRole("admin")) {
         return;
     }
 
@@ -93,12 +85,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 if (result.mode === "unavailable") {
-                    toggleLocalUserBlock(user.email, nextAction === "block");
-                    await loadUsers();
-                    return;
+                    alert("API unavailable. Please make sure the backend server is running.");
+                } else {
+                    alert(result.message || "Unable to update user status.");
                 }
-
-                alert(result.message || "Unable to update user status.");
                 actionBtn.disabled = false;
                 actionBtn.textContent = nextAction === "block" ? "Block" : "Unblock";
             });
@@ -241,8 +231,12 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        const localPayload = getLocalUsersPayload();
-        renderStats(localPayload.stats);
-        renderUsers(localPayload.users);
+        renderStats({
+            totalUsers: 0,
+            activeUsers: 0,
+            newUsersThisMonth: 0,
+            blockedUsers: 0
+        });
+        renderUsers([]);
     }
 });

@@ -247,6 +247,29 @@ input {
     color: #204884;
 }
 
+.reminder-card {
+    border: 1.8px solid var(--line);
+    border-radius: 10px;
+    background: #f7f8fa;
+    padding: 14px;
+}
+
+.reminder-card h2 {
+    margin: 0 0 8px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.reminder-card p {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.reminder-card p + p {
+    margin-top: 6px;
+}
+
 .scan-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;

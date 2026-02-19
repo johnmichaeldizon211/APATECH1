@@ -181,6 +181,7 @@ label {
 }
 
 input,
+select,
 textarea {
     width: 100%;
     border: 1.7px solid var(--blue);
@@ -193,7 +194,8 @@ textarea {
     outline: none;
 }
 
-input {
+input,
+select {
     height: 40px;
 }
 

@@ -1,0 +1,86 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecodrive Admin - Settings</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="adminsettings.css">
+    <link rel="stylesheet" href="admin-font-tuning.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">ECODRIVE</div>
+        <button class="profile-btn" type="button" aria-label="Profile">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 12a4.2 4.2 0 1 0-4.2-4.2A4.2 4.2 0 0 0 12 12Zm0 2.1c-3.3 0-6.9 1.7-6.9 4.9V20h13.8v-1c0-3.2-3.6-4.9-6.9-4.9Z"/>
+            </svg>
+        </button>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h2 class="sidebar-title">ECODRIVE<br>ADMIN</h2>
+
+            <nav class="sidebar-nav">
+                <a class="nav-btn" href="admin.html">Dashboard</a>
+                <a class="nav-btn" href="adminorder.html">Booking Request</a>
+                <a class="nav-btn" href="adminprice.html">Price Management</a>
+                <a class="nav-btn" href="adminstock.html">Stocks</a>
+                <a class="nav-btn" href="adminuser.html">Users</a>
+                <a class="nav-btn active" href="adminsettings.html">Settings</a>
+            </nav>
+
+            <a class="logout-btn" href="../log in.html">Logout</a>
+        </aside>
+
+        <main class="content">
+            <section class="panel title-panel">
+                <h1>Admin Settings</h1>
+            </section>
+
+            <section class="settings-grid">
+                <article class="panel settings-card">
+                    <h2>Login Identifier</h2>
+                    <p class="sub-copy">You can use username or email for admin sign in.</p>
+                    <form id="loginIdForm" novalidate>
+                        <label for="loginIdInput">Username or Email</label>
+                        <input id="loginIdInput" type="text" autocomplete="username" placeholder="Enter username or email">
+
+                        <label for="currentPasswordForLoginId">Current Password</label>
+                        <input id="currentPasswordForLoginId" type="password" autocomplete="current-password" placeholder="Enter current password">
+
+                        <button id="saveLoginIdBtn" type="submit">Save Login Identifier</button>
+                        <p id="loginIdStatus" class="status-msg" aria-live="polite"></p>
+                    </form>
+                </article>
+
+                <article class="panel settings-card">
+                    <h2>Password</h2>
+                    <p class="sub-copy">Use 8+ chars with upper, lower, number, and symbol.</p>
+                    <form id="passwordForm" novalidate>
+                        <label for="currentPasswordInput">Current Password</label>
+                        <input id="currentPasswordInput" type="password" autocomplete="current-password" placeholder="Current password">
+
+                        <label for="newPasswordInput">New Password</label>
+                        <input id="newPasswordInput" type="password" autocomplete="new-password" placeholder="New strong password">
+
+                        <label for="confirmPasswordInput">Confirm New Password</label>
+                        <input id="confirmPasswordInput" type="password" autocomplete="new-password" placeholder="Repeat new password">
+
+                        <button id="savePasswordBtn" type="submit">Update Password</button>
+                        <p id="passwordStatus" class="status-msg" aria-live="polite"></p>
+                    </form>
+                </article>
+            </section>
+        </main>
+    </div>
+
+    <script src="../session.js"></script>
+    <script src="adminsettings.js"></script>
+</body>
+</html>
+
+

@@ -1,0 +1,83 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecodrive Admin - Booking Details</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="adminorder-view.css">
+    <link rel="stylesheet" href="admin-font-tuning.css">
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">ECODRIVE</div>
+        <button class="profile-btn" type="button" aria-label="Profile">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 12a4.2 4.2 0 1 0-4.2-4.2A4.2 4.2 0 0 0 12 12Zm0 2.1c-3.3 0-6.9 1.7-6.9 4.9V20h13.8v-1c0-3.2-3.6-4.9-6.9-4.9Z"/>
+            </svg>
+        </button>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h2 class="sidebar-title">ECODRIVE<br>ADMIN</h2>
+
+            <nav class="sidebar-nav">
+                <a class="nav-btn" href="admin.html">Dashboard</a>
+                <a class="nav-btn active" href="adminorder.html">Booking Request</a>
+                <a class="nav-btn" href="adminprice.html">Price Management</a>
+                <a class="nav-btn" href="adminstock.html">Stocks</a>
+                <a class="nav-btn" href="adminuser.html">Users</a>
+                <a class="nav-btn" href="adminsettings.html">Settings</a>
+            </nav>
+
+            <a class="logout-btn" href="../log in.html">Logout</a>
+        </aside>
+
+        <main class="content">
+            <section class="panel title-panel">
+                <h1>Booking Details</h1>
+            </section>
+
+            <section class="panel details-panel">
+                <div id="detailsEmpty" class="empty-state" hidden>
+                    <p>Booking not found.</p>
+                    <span>The selected booking record is no longer available.</span>
+                </div>
+
+                <div id="detailsContent" class="details-content" aria-live="polite">
+                    <article class="details-grid">
+                        <div class="detail-item"><span class="label">Order ID</span><span id="detailOrderId" class="value">-</span></div>
+                        <div class="detail-item"><span class="label">Created</span><span id="detailCreatedAt" class="value">-</span></div>
+                        <div class="detail-item"><span class="label">Customer Name</span><span id="detailName" class="value">-</span></div>
+                        <div class="detail-item"><span class="label">Email</span><span id="detailEmail" class="value">-</span></div>
+                        <div class="detail-item"><span class="label">Model</span><span id="detailModel" class="value">-</span></div>
+                        <div class="detail-item"><span class="label">Service</span><span id="detailService" class="value">-</span></div>
+                        <div class="detail-item"><span class="label">Plan</span><span id="detailPlan" class="value">-</span></div>
+                        <div class="detail-item"><span class="label">Payment</span><span id="detailPayment" class="value">-</span></div>
+                        <div class="detail-item"><span class="label">Status</span><span id="detailStatus" class="value">-</span></div>
+                        <div class="detail-item"><span class="label">Total</span><span id="detailTotal" class="value">-</span></div>
+                    </article>
+
+                    <article class="detail-item wide">
+                        <span class="label">Shipping Address</span>
+                        <span id="detailAddress" class="value">-</span>
+                    </article>
+                </div>
+
+                <div class="action-row">
+                    <button id="approveBtn" type="button" class="action-btn approve">Approve</button>
+                    <button id="rejectBtn" type="button" class="action-btn reject">Reject</button>
+                    <a href="adminorder.html" class="action-btn back">Back to Requests</a>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="../session.js"></script>
+    <script src="adminorder-view.js"></script>
+</body>
+</html>
+
+

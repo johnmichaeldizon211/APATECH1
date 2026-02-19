@@ -31,7 +31,7 @@ body {
 }
 
 .brand {
-    font-size: 30px;
+    font-size: 28px;
     font-weight: 800;
     color: #0d347f;
     letter-spacing: 0.4px;
@@ -70,7 +70,7 @@ body {
 .sidebar-title {
     text-align: center;
     color: var(--blue-main);
-    font-size: 35px;
+    font-size: 31px;
     font-weight: 800;
     line-height: 1.1;
 }
@@ -86,7 +86,7 @@ body {
     display: block;
     text-align: center;
     text-decoration: none;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
     color: #0f172a;
     background: #f8fafc;
@@ -124,7 +124,7 @@ body {
 }
 
 .title-panel h1 {
-    font-size: 35px;
+    font-size: 28px;
     font-weight: 700;
     color: #111827;
 }
@@ -136,7 +136,7 @@ body {
 }
 
 .caption {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
     margin: 0 0 8px 10px;
     color: #374151;
@@ -144,18 +144,23 @@ body {
 
 .table-head {
     display: grid;
-    grid-template-columns: 1.6fr 1.4fr 1.2fr 0.9fr 0.9fr;
+    grid-template-columns: 1.6fr 1.4fr 1.2fr 1fr 1.5fr;
     gap: 14px;
     padding: 0 18px;
-    font-size: 26px;
+    font-size: 20px;
     font-weight: 500;
     color: #111827;
 }
 
-.request-row {
+.request-list {
     margin-top: 10px;
     display: grid;
-    grid-template-columns: 1.6fr 1.4fr 1.2fr 0.9fr 0.9fr;
+    gap: 10px;
+}
+
+.request-row {
+    display: grid;
+    grid-template-columns: 1.6fr 1.4fr 1.2fr 1fr 1.5fr;
     gap: 14px;
     align-items: center;
     background: #f7f9fc;
@@ -163,8 +168,12 @@ body {
     border-radius: 12px;
     padding: 10px 16px;
     box-shadow: 0 2px 5px rgba(30, 49, 104, 0.2);
-    font-size: 24px;
+    font-size: 16px;
     font-weight: 500;
+}
+
+.request-row span {
+    overflow-wrap: anywhere;
 }
 
 .status {
@@ -172,16 +181,48 @@ body {
     font-weight: 500;
 }
 
-.view-btn {
-    justify-self: start;
-    min-width: 92px;
+.action-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    min-width: 72px;
     border: 1px solid #94a3b8;
     border-radius: 8px;
     background: #ffffff;
     color: #111827;
-    font-size: 10px;
-    padding: 4px 8px;
+    font-size: 11px;
+    padding: 5px 8px;
     cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    line-height: 1.1;
+}
+
+.action-btn:hover {
+    background: #eef2ff;
+}
+
+.action-btn.approve {
+    border-color: #148043;
+    color: #0d5c30;
+}
+
+.action-btn.reject {
+    border-color: #ac2634;
+    color: #912231;
+}
+
+.action-btn.view {
+    border-color: #3557a1;
+    color: #21396d;
+}
+
+.empty-state[hidden] {
+    display: none;
 }
 
 .empty-state {
@@ -197,14 +238,14 @@ body {
 }
 
 .empty-state p {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 600;
     color: #0f2f74;
 }
 
 .empty-state span {
     margin-top: 6px;
-    font-size: 15px;
+    font-size: 14px;
     color: #5b6474;
 }
 
@@ -217,7 +258,7 @@ body {
     background: #eef2f7;
     color: #334155;
     padding: 4px 9px;
-    font-size: 15px;
+    font-size: 14px;
     line-height: 1;
     cursor: pointer;
 }
@@ -248,22 +289,22 @@ body {
 
     .table-head,
     .request-row {
-        grid-template-columns: 1.3fr 1.2fr 1fr 0.9fr 0.9fr;
-        font-size: 16px;
+        grid-template-columns: 1.3fr 1.2fr 1fr 1fr 1.3fr;
+        font-size: 14px;
     }
 
     .title-panel h1 {
-        font-size: 28px;
+        font-size: 24px;
     }
 }
 
 @media (max-width: 620px) {
     .brand {
-        font-size: 22px;
+        font-size: 20px;
     }
 
     .sidebar-title {
-        font-size: 26px;
+        font-size: 22px;
     }
 
     .sidebar-nav {
@@ -277,18 +318,18 @@ body {
     .request-row {
         grid-template-columns: 1fr;
         gap: 6px;
-        font-size: 14px;
+        font-size: 13px;
     }
 
-    .view-btn {
-        justify-self: end;
+    .action-group {
+        justify-content: flex-end;
     }
 
     .empty-state p {
-        font-size: 18px;
+        font-size: 16px;
     }
 
     .empty-state span {
-        font-size: 13px;
+        font-size: 12px;
     }
 }

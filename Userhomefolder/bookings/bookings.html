@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -12,8 +12,13 @@
 <body>
     <nav class="navbar">
         <div class="logo">ECODRIVE</div>
+        <button type="button" class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="nav-right">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
 
-        <div class="nav-right">
+        <div class="nav-right" id="nav-right">
             <ul class="nav-links">
                 <li><a href="../userhome.html">Home</a></li>
                 <li><a href="bookings.html" class="active">Bookings</a></li>
@@ -66,13 +71,71 @@
         </form>
     </section>
 
+    <script src="../../session.js"></script>
+    <script src="../chatbot-brain.js"></script>
     <script>
         (function () {
+            const navbar = document.querySelector(".navbar");
+            const navToggle = document.getElementById("nav-toggle");
+            const navRight = document.getElementById("nav-right");
             const profileBtn = document.querySelector(".profile-menu .profile-btn");
             const dropdown = document.querySelector(".profile-menu .dropdown");
             const bookingRows = document.getElementById("bookingRows");
             const currentUserKey = "ecodrive_current_user_email";
             const bookingStorageKeys = ["ecodrive_bookings", "ecodrive_orders", "orders"];
+            const API_BASE = String(
+                localStorage.getItem("ecodrive_api_base") ||
+                localStorage.getItem("ecodrive_kyc_api_base") ||
+                "http://127.0.0.1:5050"
+            )
+                .trim()
+                .replace(/\/+$/, "");
+            const BOOKING_REFRESH_INTERVAL_MS = 7000;
+            let bookingRefreshTimerId = null;
+            let bookingRefreshInFlight = false;
+
+            function isMobileMenuLayout() {
+                return window.matchMedia("(max-width: 980px)").matches;
+            }
+
+            function closeNavMenu() {
+                if (!navRight || !navToggle) {
+                    return;
+                }
+                navRight.classList.remove("open");
+                navToggle.setAttribute("aria-expanded", "false");
+            }
+
+            if (navToggle && navRight) {
+                navToggle.addEventListener("click", function (event) {
+                    event.stopPropagation();
+                    const willOpen = !navRight.classList.contains("open");
+                    navRight.classList.toggle("open", willOpen);
+                    navToggle.setAttribute("aria-expanded", willOpen ? "true" : "false");
+                });
+
+                navRight.addEventListener("click", function (event) {
+                    const navLink = event.target.closest(".nav-links a");
+                    if (navLink && isMobileMenuLayout()) {
+                        closeNavMenu();
+                    }
+                });
+
+                window.addEventListener("resize", function () {
+                    if (!isMobileMenuLayout()) {
+                        closeNavMenu();
+                    }
+                });
+
+                document.addEventListener("click", function (event) {
+                    if (!isMobileMenuLayout()) {
+                        return;
+                    }
+                    if (navbar && !navbar.contains(event.target)) {
+                        closeNavMenu();
+                    }
+                });
+            }
 
             if (profileBtn && dropdown) {
                 profileBtn.addEventListener("click", function (e) {
@@ -94,6 +157,40 @@
                     return JSON.parse(value);
                 } catch (_error) {
                     return null;
+                }
+            }
+
+            function getApiUrl(path) {
+                return API_BASE ? API_BASE + path : path;
+            }
+
+            async function cancelBookingViaApi(orderId) {
+                const email = getCurrentUserEmail();
+                if (!orderId || !email) {
+                    return false;
+                }
+
+                try {
+                    const response = await fetch(getApiUrl("/api/bookings/" + encodeURIComponent(orderId) + "/cancel"), {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            email: email
+                        })
+                    });
+
+                    if (response.status === 404 || response.status === 405) {
+                        return false;
+                    }
+
+                    const payload = await response.json().catch(function () {
+                        return {};
+                    });
+                    return response.ok && payload && payload.success === true;
+                } catch (_error) {
+                    return false;
                 }
             }
 
@@ -120,6 +217,34 @@
                 }
 
                 return merged;
+            }
+
+            async function fetchBookingsFromApi() {
+                const email = getCurrentUserEmail();
+                if (!email) {
+                    return [];
+                }
+
+                try {
+                    const response = await fetch(getApiUrl("/api/bookings?email=" + encodeURIComponent(email)), {
+                        method: "GET"
+                    });
+
+                    if (response.status === 404 || response.status === 405) {
+                        return [];
+                    }
+
+                    const payload = await response.json().catch(function () {
+                        return {};
+                    });
+                    if (!response.ok || payload.success !== true || !Array.isArray(payload.bookings)) {
+                        return [];
+                    }
+
+                    return payload.bookings;
+                } catch (_error) {
+                    return [];
+                }
             }
 
             function canCancelBookingStatus(statusValue, fulfillmentValue) {
@@ -350,13 +475,16 @@
                 return updated;
             }
 
-            function renderRows() {
+            async function renderRows() {
                 if (!bookingRows) {
                     return;
                 }
 
                 cleanupCancelledBookings();
-                const items = normalizeBookings(readBookings());
+                const apiRows = await fetchBookingsFromApi();
+                const localRows = readBookings();
+                const sourceRows = apiRows.length > 0 ? apiRows.concat(localRows) : localRows;
+                const items = normalizeBookings(sourceRows);
                 const maxRows = 6;
                 const htmlParts = [];
 
@@ -381,8 +509,41 @@
                 bookingRows.innerHTML = htmlParts.join("");
             }
 
+            async function refreshBookings(force) {
+                if (bookingRefreshInFlight) {
+                    return;
+                }
+                if (document.hidden && !force) {
+                    return;
+                }
+
+                bookingRefreshInFlight = true;
+                try {
+                    await renderRows();
+                } finally {
+                    bookingRefreshInFlight = false;
+                }
+            }
+
+            function startBookingAutoRefresh() {
+                if (bookingRefreshTimerId) {
+                    return;
+                }
+                bookingRefreshTimerId = window.setInterval(function () {
+                    void refreshBookings(false);
+                }, BOOKING_REFRESH_INTERVAL_MS);
+            }
+
+            function stopBookingAutoRefresh() {
+                if (!bookingRefreshTimerId) {
+                    return;
+                }
+                window.clearInterval(bookingRefreshTimerId);
+                bookingRefreshTimerId = null;
+            }
+
             if (bookingRows) {
-                bookingRows.addEventListener("click", function (event) {
+                bookingRows.addEventListener("click", async function (event) {
                     const cancelBtn = event.target.closest(".cancel-btn");
                     if (!cancelBtn) {
                         return;
@@ -398,13 +559,25 @@
                         return;
                     }
 
-                    if (cancelBooking(orderId, createdAt)) {
-                        renderRows();
-                    }
+                    await cancelBookingViaApi(orderId);
+                    cancelBooking(orderId, createdAt);
+                    await refreshBookings(true);
                 });
             }
 
-            renderRows();
+            document.addEventListener("visibilitychange", function () {
+                if (document.hidden) {
+                    stopBookingAutoRefresh();
+                    return;
+                }
+                void refreshBookings(true);
+                startBookingAutoRefresh();
+            });
+
+            window.addEventListener("beforeunload", stopBookingAutoRefresh);
+
+            void refreshBookings(true);
+            startBookingAutoRefresh();
 
             const botToggle = document.getElementById("chatbot-toggle");
             const chatPanel = document.getElementById("chat-panel");
@@ -413,16 +586,141 @@
             const chatInput = document.getElementById("chat-input");
             const chatBody = document.getElementById("chat-body");
             const chatKey = "ecodrive_chat_messages_v1";
+            const maxChatMessages = 80;
+            const chatState = {
+                awaitingPriceModel: false
+            };
+            const smartReply = (window.EcodriveChatbotBrain && typeof window.EcodriveChatbotBrain.createResponder === "function")
+                ? window.EcodriveChatbotBrain.createResponder()
+                : null;
+            const bikeCatalog = [
+                { model: "BLITZ 2000", price: 68000, category: "2-Wheel", aliases: ["blitz 2000"] },
+                { model: "BLITZ 1200", price: 45000, category: "2-Wheel", aliases: ["blitz 1200"] },
+                { model: "FUN 350R II", price: 74000, category: "2-Wheel", aliases: ["fun 350r ii", "fun 350r", "fun 350"] },
+                { model: "CANDY 800", price: 58000, category: "2-Wheel", aliases: ["candy 800"] },
+                { model: "BLITZ 200R", price: 74000, category: "2-Wheel", aliases: ["blitz 200r"] },
+                { model: "TRAVELLER 1500 (2-Wheel)", price: 79000, category: "2-Wheel", aliases: ["traveller 1500", "traveler 1500 2 wheel", "traveller 1500 2 wheel"] },
+                { model: "ECONO 500 MP", price: 51500, category: "2-Wheel", aliases: ["econo 500 mp"] },
+                { model: "ECONO 350 MINI-II", price: 39000, category: "2-Wheel", aliases: ["econo 350 mini ii", "econo 350 mini", "mini ii"] },
+                { model: "ECARGO 100", price: 72500, category: "3-Wheel", aliases: ["ecargo 100", "e cargo 100"] },
+                { model: "E-CAB 1000 (3-Wheel)", price: 65000, category: "3-Wheel", aliases: ["e cab 1000", "ecab 1000", "e-cab 1000 3 wheel"] },
+                { model: "ECAB 1000 II", price: 90000, category: "3-Wheel", aliases: ["ecab 1000 ii", "ecab 1000 2"] },
+                { model: "ECONO 800 MP II", price: 45000, category: "3-Wheel", aliases: ["econo 800 mp ii", "econo 800 mp 2"] },
+                { model: "E-CARGO 800J", price: 65000, category: "4-Wheel", aliases: ["e cargo 800j", "ecargo 800j", "e-cargo 800j"] },
+                { model: "TRAVELER 1500 (4-Wheel)", price: 130000, category: "4-Wheel", aliases: ["traveler 1500", "traveller 1500", "traveler 1500 4 wheel", "traveller 1500 4 wheel"] },
+                { model: "E-CAB 1000 (4-Wheel)", price: 75000, category: "4-Wheel", aliases: ["e cab 1000", "ecab 1000", "e cab 1000 4 wheel", "ecab 1000 4 wheel"] },
+                { model: "ECONO 800 MP", price: 60000, category: "4-Wheel", aliases: ["econo 800 mp"] }
+            ];
             let chatMessages = [];
 
             const parsedMessages = safeParse(localStorage.getItem(chatKey));
             if (Array.isArray(parsedMessages)) {
-                chatMessages = parsedMessages;
+                chatMessages = parsedMessages
+                    .filter(function (entry) {
+                        return entry && (entry.from === "user" || entry.from === "bot") && typeof entry.text === "string";
+                    })
+                    .slice(-maxChatMessages);
             }
 
             if (chatMessages.length === 0) {
-                chatMessages = [{ from: "bot", text: "Hello! I'm Ecodrive Bot. How can I help?" }];
+                chatMessages = [{ from: "bot", text: "Hi! I'm Ecodrive Bot. Ask me about Ecodrive ebikes, prices, booking status, payment, or repair." }];
                 localStorage.setItem(chatKey, JSON.stringify(chatMessages));
+            }
+
+            function normalizeText(value) {
+                return String(value || "")
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, " ")
+                    .trim();
+            }
+
+            function includesAny(text, keywords) {
+                return keywords.some(function (keyword) {
+                    return text.includes(keyword);
+                });
+            }
+
+            function formatPesoText(amount) {
+                return String.fromCharCode(8369) + Number(amount || 0).toLocaleString("en-PH", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+
+            function getWheelFilter(normalizedQuestion) {
+                if (includesAny(normalizedQuestion, ["2 wheel", "2 wheels", "two wheel", "2w", "dalawang gulong"])) return "2-Wheel";
+                if (includesAny(normalizedQuestion, ["3 wheel", "3 wheels", "three wheel", "3w", "tatlong gulong"])) return "3-Wheel";
+                if (includesAny(normalizedQuestion, ["4 wheel", "4 wheels", "four wheel", "4w", "apat na gulong"])) return "4-Wheel";
+                return "";
+            }
+
+            function getCatalogByWheel(wheel) {
+                if (!wheel) return bikeCatalog.slice();
+                return bikeCatalog.filter(function (item) {
+                    return item.category === wheel;
+                });
+            }
+
+            function findModelMatches(questionText) {
+                const normalizedQuestion = normalizeText(questionText);
+                if (!normalizedQuestion) {
+                    return [];
+                }
+
+                const wheelFilter = getWheelFilter(normalizedQuestion);
+                const matches = bikeCatalog.filter(function (item) {
+                    const directModel = normalizedQuestion.includes(normalizeText(item.model));
+                    const aliasHit = item.aliases.some(function (alias) {
+                        return normalizedQuestion.includes(normalizeText(alias));
+                    });
+                    if (!(directModel || aliasHit)) {
+                        return false;
+                    }
+                    if (!wheelFilter) {
+                        return true;
+                    }
+                    return item.category === wheelFilter;
+                });
+
+                return matches;
+            }
+
+            function getUserBookingSummary() {
+                const userItems = normalizeBookings(readBookings());
+                if (userItems.length === 0) {
+                    return "Wala ka pang active booking. Pwede ka mag-book from Ebikes Products page.";
+                }
+
+                const latest = userItems[0];
+                return "May " + userItems.length + " active booking(s). Latest: " + latest.model + " - " + latest.status + " (" + latest.fulfillmentStatus + ").";
+            }
+
+            function getCancelSummary() {
+                const userItems = normalizeBookings(readBookings());
+                if (userItems.length === 0) {
+                    return "Wala ka pang active booking kaya wala pang kailangan i-cancel.";
+                }
+
+                const cancellableCount = userItems.filter(function (item) {
+                    return item.canCancel;
+                }).length;
+
+                if (cancellableCount === 0) {
+                    return "Sa ngayon, walang cancellable booking. Completed/Delivered orders cannot be cancelled.";
+                }
+
+                return "May " + cancellableCount + " booking(s) na puwedeng i-cancel. Gamitin lang ang Cancel button sa booking row.";
+            }
+
+            function addChatMessage(from, text) {
+                chatMessages.push({
+                    from: from,
+                    text: String(text || "")
+                });
+
+                if (chatMessages.length > maxChatMessages) {
+                    chatMessages = chatMessages.slice(chatMessages.length - maxChatMessages);
+                }
             }
 
             function saveMessages() {
@@ -444,12 +742,134 @@
             }
 
             function getBotReply(text) {
-                const value = text.toLowerCase();
-                if (value.includes("hello") || value.includes("hi")) return "Hi! We can help with your bookings and order status.";
-                if (value.includes("cancel")) return "Open your booking row and use the Cancel button if it is still available.";
-                if (value.includes("repair")) return "You can submit repair concerns from the Repair Booking page.";
-                if (value.includes("status") || value.includes("order")) return "Order status is shown per row in your bookings table.";
-                return "Thanks for your message. Our support team will contact you soon.";
+                const normalized = normalizeText(text);
+                const wheelFilter = getWheelFilter(normalized);
+                const modelMatches = findModelMatches(text);
+                const isPriceQuestion = includesAny(normalized, ["price", "presyo", "magkano", "mag kano", "hm", "how much", "cost"]);
+
+                if (!normalized) {
+                    return "Type your question and I will help.";
+                }
+
+                if (includesAny(normalized, ["help", "tulong", "ano pwede itanong", "what can you do"])) {
+                    chatState.awaitingPriceModel = false;
+                    return "Pwede mo itanong: available models, price ng model, cheapest ebike, booking status, payment options, installment, delivery/pick up, cancel booking, at repair booking.";
+                }
+
+                if (includesAny(normalized, ["hello", "hi", "hey", "good morning", "good afternoon", "good evening", "kumusta", "kamusta"])) {
+                    chatState.awaitingPriceModel = false;
+                    return "Hi! Ready ako tumulong about Ecodrive ebikes, prices, at bookings.";
+                }
+
+                if (includesAny(normalized, ["salamat", "thank you", "thanks"])) {
+                    chatState.awaitingPriceModel = false;
+                    return "You're welcome. Sabihin mo lang kung may tanong ka pa tungkol sa ebikes or booking mo.";
+                }
+
+                if (includesAny(normalized, ["pinakamura", "cheapest", "lowest"])) {
+                    chatState.awaitingPriceModel = false;
+                    const scoped = getCatalogByWheel(wheelFilter);
+                    if (scoped.length === 0) {
+                        return "Wala akong nakita na model para sa category na iyan.";
+                    }
+                    const cheapest = scoped.reduce(function (best, item) {
+                        return item.price < best.price ? item : best;
+                    }, scoped[0]);
+                    return "Pinakamura sa " + (wheelFilter || "all categories") + " is " + cheapest.model + " at " + formatPesoText(cheapest.price) + ".";
+                }
+
+                if (includesAny(normalized, ["pinakamahal", "most expensive", "highest price", "premium"])) {
+                    chatState.awaitingPriceModel = false;
+                    const scoped = getCatalogByWheel(wheelFilter);
+                    if (scoped.length === 0) {
+                        return "Wala akong nakita na model para sa category na iyan.";
+                    }
+                    const expensive = scoped.reduce(function (best, item) {
+                        return item.price > best.price ? item : best;
+                    }, scoped[0]);
+                    return "Pinakamahal sa " + (wheelFilter || "all categories") + " is " + expensive.model + " at " + formatPesoText(expensive.price) + ".";
+                }
+
+                if (isPriceQuestion || chatState.awaitingPriceModel) {
+                    if (modelMatches.length === 1) {
+                        chatState.awaitingPriceModel = false;
+                        const selected = modelMatches[0];
+                        return selected.model + " costs " + formatPesoText(selected.price) + " (" + selected.category + ").";
+                    }
+
+                    if (modelMatches.length > 1) {
+                        chatState.awaitingPriceModel = false;
+                        const priceOptions = modelMatches.map(function (item) {
+                            return item.model + " - " + formatPesoText(item.price);
+                        });
+                        return "May maraming variant na tugma: " + priceOptions.join("; ") + ".";
+                    }
+
+                    chatState.awaitingPriceModel = true;
+                    return "Anong model ang gusto mong i-check? Example: BLITZ 2000, ECARGO 100, o ECONO 500 MP.";
+                }
+
+                if (includesAny(normalized, ["book", "booking", "mag book", "magbook", "paano mag", "how to book", "confirm booking"])) {
+                    chatState.awaitingPriceModel = false;
+                    return "Para mag-book: pumili ng model sa Ebikes Products, pindutin ang Book Now, ilagay customer/shipping info, piliin payment, tapos Confirm Booking.";
+                }
+
+                if (includesAny(normalized, ["available", "models", "model", "catalog", "list", "anong ebike", "ano ebike", "products"])) {
+                    chatState.awaitingPriceModel = false;
+                    const scoped = getCatalogByWheel(wheelFilter);
+                    if (scoped.length === 0) {
+                        return "Wala akong model list para sa category na iyan.";
+                    }
+                    const preview = scoped.slice(0, 6).map(function (item) {
+                        return item.model;
+                    }).join(", ");
+                    if (scoped.length > 6) {
+                        return "Available " + (wheelFilter || "Ecodrive") + " models (" + scoped.length + "): " + preview + ", at iba pa. Sabihin mo lang yung model para sa exact price.";
+                    }
+                    return "Available " + (wheelFilter || "Ecodrive") + " models: " + preview + ".";
+                }
+
+                if (includesAny(normalized, ["status", "tracking", "track", "my order", "my booking", "order"])) {
+                    chatState.awaitingPriceModel = false;
+                    return getUserBookingSummary();
+                }
+
+                if (includesAny(normalized, ["cancel", "cancellation"])) {
+                    chatState.awaitingPriceModel = false;
+                    return getCancelSummary();
+                }
+
+                if (includesAny(normalized, ["payment", "gcash", "maya", "cod", "cash on delivery", "bayad"])) {
+                    chatState.awaitingPriceModel = false;
+                    return "Payment options: GCash, Maya, at Cash on Delivery. Pumili ka sa checkout page bago i-confirm ang booking.";
+                }
+
+                if (includesAny(normalized, ["installment", "hulugan", "monthly", "downpayment"])) {
+                    chatState.awaitingPriceModel = false;
+                    return "Supported ang Installment flow. Sa payment page, piliin ang Installment then i-complete ang verification steps.";
+                }
+
+                if (includesAny(normalized, ["delivery", "pickup", "pick up", "shipping"])) {
+                    chatState.awaitingPriceModel = false;
+                    return "May Delivery at Pick Up options sa checkout. Delivery adds shipping fee; Pick Up has no shipping fee.";
+                }
+
+                if (includesAny(normalized, ["repair", "sira", "maintenance"])) {
+                    chatState.awaitingPriceModel = false;
+                    return "For repairs, punta sa Repair Booking page then ilagay ang issue details para ma-schedule ka.";
+                }
+
+                if (includesAny(normalized, ["contact", "phone", "email", "address", "location", "nasaan"])) {
+                    chatState.awaitingPriceModel = false;
+                    return "Contact Ecodrive: 09338288185, ecodrive@gmail.com, Poblacion, Baliwag, Bulacan.";
+                }
+
+                if (includesAny(normalized, ["ecodrive", "about", "ano ang ecodrive", "sino kayo"])) {
+                    chatState.awaitingPriceModel = false;
+                    return "Ecodrive offers electric bikes across 2-wheel, 3-wheel, at 4-wheel categories with booking and repair support.";
+                }
+
+                return "I can help with ebike models, prices, booking status, payment, installment, delivery, and repair. Type \"help\" for sample questions.";
             }
 
             function openChat() {
@@ -484,8 +904,8 @@
                     const text = (chatInput && chatInput.value ? chatInput.value : "").trim();
                     if (!text) return;
 
-                    chatMessages.push({ from: "user", text: text });
-                    chatMessages.push({ from: "bot", text: getBotReply(text) });
+                    addChatMessage("user", text);
+                    addChatMessage("bot", smartReply ? smartReply(text) : getBotReply(text));
                     saveMessages();
                     renderMessages();
 
@@ -497,9 +917,17 @@
             }
 
             document.addEventListener("keydown", function (event) {
-                if (event.key === "Escape") closeChat();
+                if (event.key === "Escape") {
+                    closeChat();
+                    closeNavMenu();
+                    if (dropdown) {
+                        dropdown.classList.remove("show");
+                    }
+                }
             });
         })();
     </script>
 </body>
 </html>
+
+

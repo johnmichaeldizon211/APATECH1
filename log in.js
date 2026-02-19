@@ -1,56 +1,43 @@
-document.addEventListener("DOMContentLoaded", () => {
-    const form = document.getElementById("loginForm");
-    const email = document.getElementById("email");
-    const password = document.getElementById("password");
-    const remember = document.getElementById("remember");
-    const loginError = document.getElementById("loginError");
+document.addEventListener("DOMContentLoaded", function () {
+    var form = document.getElementById("loginForm");
+    var emailInput = document.getElementById("email");
+    var passwordInput = document.getElementById("password");
+    var rememberInput = document.getElementById("remember");
+    var loginError = document.getElementById("loginError");
 
-    const adminEmail = "echodrive";
-    const adminPassword = "echodriveadmin123";
-    const usersKey = "users";
-    const currentUserKey = "ecodrive_current_user_email";
-    const API_BASE = String(
-        localStorage.getItem("ecodrive_api_base") ||
-        localStorage.getItem("ecodrive_kyc_api_base") ||
-        ""
-    )
-        .trim()
-        .replace(/\/+$/, "");
-
-    function getApiUrl(path) {
-        return API_BASE ? `${API_BASE}${path}` : path;
+    if (!form || !emailInput || !passwordInput) {
+        return;
     }
 
-    function getUsers() {
-        try {
-            const raw = localStorage.getItem(usersKey);
-            const parsed = raw ? JSON.parse(raw) : [];
-            return Array.isArray(parsed) ? parsed : [];
-        } catch (_error) {
-            return [];
-        }
-    }
-
-    function setUsers(users) {
-        localStorage.setItem(usersKey, JSON.stringify(Array.isArray(users) ? users : []));
-    }
-
-    function setCurrentUser(emailValue, shouldRemember) {
-        if (shouldRemember) {
-            localStorage.setItem(currentUserKey, emailValue);
-            sessionStorage.removeItem(currentUserKey);
+    if (window.EcodriveSession && typeof window.EcodriveSession.getCurrentUser === "function") {
+        var existingUser = window.EcodriveSession.getCurrentUser();
+        if (existingUser && window.EcodriveSession.getToken && window.EcodriveSession.getToken()) {
+            var existingRole = String(existingUser.role || "").trim().toLowerCase();
+            window.location.href = existingRole === "admin" ? "admin/admin.html" : "Userhomefolder/userhome.html";
             return;
         }
-        sessionStorage.setItem(currentUserKey, emailValue);
-        localStorage.removeItem(currentUserKey);
+    }
+
+    function getApiUrl(path) {
+        if (window.EcodriveSession && typeof window.EcodriveSession.getApiUrl === "function") {
+            return window.EcodriveSession.getApiUrl(path);
+        }
+        var base = String(
+            localStorage.getItem("ecodrive_api_base") ||
+            localStorage.getItem("ecodrive_kyc_api_base") ||
+            "http://127.0.0.1:5050"
+        )
+            .trim()
+            .replace(/\/+$/, "");
+        return base + path;
     }
 
     function setError(message) {
         if (loginError) {
-            loginError.textContent = message;
+            loginError.textContent = String(message || "");
             return;
         }
-        alert(message);
+        alert(String(message || "Login failed."));
     }
 
     function clearError() {
@@ -59,53 +46,22 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    function normalizePhone(phone) {
-        const cleaned = String(phone || "").trim().replace(/[\s-]/g, "");
-        if (/^\+639\d{9}$/.test(cleaned)) {
-            return `0${cleaned.slice(3)}`;
-        }
-        if (/^639\d{9}$/.test(cleaned)) {
-            return `0${cleaned.slice(2)}`;
-        }
-        return cleaned;
-    }
+    form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        clearError();
 
-    function upsertUserFromApi(userData) {
-        if (!userData || !userData.email) {
+        var emailValue = String(emailInput.value || "").trim().toLowerCase();
+        var passwordValue = String(passwordInput.value || "").trim();
+        var remember = rememberInput ? Boolean(rememberInput.checked) : false;
+
+        if (!emailValue || !passwordValue) {
+            setError("Please enter both email/username and password.");
             return;
         }
 
-        const users = getUsers();
-        const targetEmail = String(userData.email || "").trim().toLowerCase();
-        const index = users.findIndex(
-            (user) => String(user.email || "").trim().toLowerCase() === targetEmail
-        );
-
-        const merged = {
-            ...(index >= 0 ? users[index] : {}),
-            firstName: userData.firstName || (index >= 0 ? users[index].firstName : ""),
-            middleInitial: userData.middleInitial || (index >= 0 ? users[index].middleInitial : ""),
-            lastName: userData.lastName || (index >= 0 ? users[index].lastName : ""),
-            name: userData.name || (index >= 0 ? users[index].name : ""),
-            email: targetEmail,
-            phone: userData.phone ? normalizePhone(userData.phone) : (index >= 0 ? users[index].phone : ""),
-            address: userData.address || (index >= 0 ? users[index].address : ""),
-            role: userData.role || (index >= 0 ? users[index].role : "user"),
-            isBlocked: String(userData.status || "").toLowerCase() === "blocked"
-        };
-
-        if (index >= 0) {
-            users[index] = merged;
-        } else {
-            users.push(merged);
-        }
-
-        setUsers(users);
-    }
-
-    async function tryApiLogin(emailValue, passwordValue) {
+        var response;
         try {
-            const response = await fetch(getApiUrl("/api/login"), {
+            response = await fetch(getApiUrl("/api/login"), {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -115,99 +71,45 @@ document.addEventListener("DOMContentLoaded", () => {
                     password: passwordValue
                 })
             });
-
-            if (response.status === 404 || response.status === 405) {
-                return { mode: "unavailable" };
-            }
-
-            const data = await response.json().catch(() => ({}));
-            if (!response.ok || data.success === false) {
-                return {
-                    mode: "rejected",
-                    message: data.message || "Login failed."
-                };
-            }
-
-            return {
-                mode: "ok",
-                data: data
-            };
         } catch (_error) {
-            return { mode: "unavailable" };
-        }
-    }
-
-    const rememberedEmail = localStorage.getItem(currentUserKey);
-    if (rememberedEmail && email) {
-        email.value = rememberedEmail;
-        if (remember) {
-            remember.checked = true;
-        }
-    }
-
-    form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        clearError();
-
-        const emailValue = email.value.trim().toLowerCase();
-        const passwordValue = password.value.trim();
-        const shouldRemember = remember ? remember.checked : false;
-
-        if (!emailValue || !passwordValue) {
-            setError("Please enter both email and password.");
+            setError("API is unavailable. Please start the backend server.");
             return;
         }
 
-        if (emailValue === adminEmail && passwordValue === adminPassword) {
-            setCurrentUser(adminEmail, shouldRemember);
+        var payload = await response.json().catch(function () {
+            return {};
+        });
+        if (!response.ok || payload.success !== true) {
+            setError(payload.message || "Invalid email/username or password.");
+            return;
+        }
+
+        var user = payload.user && typeof payload.user === "object" ? payload.user : {};
+        var token = String(payload.token || "").trim();
+        var expiresAt = payload.expiresAt ? new Date(payload.expiresAt).getTime() : 0;
+
+        if (!window.EcodriveSession || typeof window.EcodriveSession.setSession !== "function") {
+            setError("Session layer failed to load. Refresh and try again.");
+            return;
+        }
+
+        var didSave = window.EcodriveSession.setSession({
+            token: token,
+            user: user,
+            expiresAt: expiresAt,
+            expiresInMs: Number(payload.expiresInMs || 0)
+        }, remember);
+
+        if (!didSave) {
+            setError("Unable to create login session. Please try again.");
+            return;
+        }
+
+        var role = String(user.role || "").trim().toLowerCase();
+        if (role === "admin") {
             window.location.href = "admin/admin.html";
             return;
         }
-
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(emailValue)) {
-            setError("Please enter a valid email address.");
-            return;
-        }
-
-        const apiLogin = await tryApiLogin(emailValue, passwordValue);
-        if (apiLogin.mode === "ok") {
-            const user = apiLogin.data && apiLogin.data.user ? apiLogin.data.user : {};
-            upsertUserFromApi(user);
-            setCurrentUser(String(user.email || emailValue).toLowerCase(), shouldRemember);
-            window.location.href = "Userhomefolder/userhome.html";
-            return;
-        }
-
-        if (apiLogin.mode === "rejected") {
-            setError(apiLogin.message || "Invalid email or password.");
-            return;
-        }
-
-        const users = getUsers();
-        const matchedByEmail = users.find(
-            (user) => String(user.email || "").toLowerCase() === emailValue
-        );
-
-        if (!matchedByEmail) {
-            setError("Invalid email or password.");
-            return;
-        }
-
-        if (
-            matchedByEmail.isBlocked === true ||
-            String(matchedByEmail.status || "").toLowerCase() === "blocked"
-        ) {
-            setError("Your account is blocked. Please contact admin.");
-            return;
-        }
-
-        if (String(matchedByEmail.password || "") !== passwordValue) {
-            setError("Invalid email or password.");
-            return;
-        }
-
-        setCurrentUser(emailValue, shouldRemember);
         window.location.href = "Userhomefolder/userhome.html";
     });
 });

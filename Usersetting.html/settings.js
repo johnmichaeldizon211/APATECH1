@@ -54,6 +54,13 @@
   const usersKey = "users";
   const currentUserKey = "ecodrive_current_user_email";
   const orderStorageKeys = ["ecodrive_orders", "orders", "ecodrive_bookings"];
+  const API_BASE = String(
+    localStorage.getItem("ecodrive_api_base")
+    || localStorage.getItem("ecodrive_kyc_api_base")
+    || "http://127.0.0.1:5050"
+  )
+    .trim()
+    .replace(/\/+$/, "");
   const defaultAvatarSrc = avatarImage.getAttribute("src");
   let activeProfileKey = getProfileStorageKey(getCurrentUserEmail());
   let activateSectionById = null;
@@ -63,7 +70,8 @@
   }
 
   loadSavedData();
-  renderOrderStatus();
+  void hydrateProfileFromApi();
+  void renderOrderStatus();
   bindSectionSwitching();
   bindTopProfileMenu();
   bindChatbot();
@@ -101,7 +109,7 @@
     saveProfile(payload);
   });
 
-  securityForm.addEventListener("submit", (event) => {
+  securityForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     clearSecurityFeedback();
 
@@ -119,7 +127,42 @@
       return;
     }
 
-    const passwordUpdated = updateCurrentUserPassword(currentPassword, newPassword);
+    const currentEmail = getCurrentUserEmail();
+    let passwordUpdated = false;
+    let usedApi = false;
+
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(currentEmail)) {
+      try {
+        const response = await fetch(getApiUrl("/api/profile/password"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            email: currentEmail,
+            currentPassword: currentPassword,
+            newPassword: newPassword
+          })
+        });
+
+        if (response.status !== 404 && response.status !== 405) {
+          const data = await response.json().catch(() => ({}));
+          usedApi = true;
+          if (!response.ok || data.success !== true) {
+            setSecurityStatus(data.message || "Unable to update password.", true);
+            return;
+          }
+          passwordUpdated = updateCurrentUserPassword(currentPassword, newPassword, true);
+        }
+      } catch (_error) {
+        usedApi = false;
+      }
+    }
+
+    if (!usedApi) {
+      passwordUpdated = updateCurrentUserPassword(currentPassword, newPassword);
+    }
+
     if (!passwordUpdated) {
       setSecurityStatus("Current password is incorrect or user is not found.", true);
       return;
@@ -133,8 +176,12 @@
     );
 
     securityForm.reset();
-    setSecurityStatus("Password updated locally.", false);
+    setSecurityStatus(usedApi ? "Password updated successfully." : "Password updated locally.", false);
   });
+
+  function getApiUrl(path) {
+    return API_BASE ? `${API_BASE}${path}` : path;
+  }
 
   function bindSectionSwitching() {
     activateSectionById = (targetId) => {
@@ -152,6 +199,10 @@
         section.classList.toggle("hidden", !isTarget);
         section.setAttribute("aria-hidden", String(!isTarget));
       });
+
+      if (targetId === "orderSection") {
+        void renderOrderStatus();
+      }
     };
 
     sections.forEach((section) => {
@@ -351,31 +402,81 @@
     }
   }
 
-  function renderOrderStatus() {
-    if (!orderList) {
+  async function loadOrdersFromApi(email) {
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      return { mode: "unavailable", orders: [] };
+    }
+
+    try {
+      const response = await fetch(
+        getApiUrl(`/api/bookings?email=${encodeURIComponent(normalizedEmail)}`),
+        { method: "GET" }
+      );
+
+      if (response.status === 404 || response.status === 405) {
+        return { mode: "unavailable", orders: [] };
+      }
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || payload.success !== true) {
+        return { mode: "error", orders: [] };
+      }
+
+      return {
+        mode: "ok",
+        orders: Array.isArray(payload.bookings) ? payload.bookings : []
+      };
+    } catch (_error) {
+      return { mode: "unavailable", orders: [] };
+    }
+  }
+
+  async function renderOrderStatus() {
+    if (!orderList || !orderStatusMsg) {
       return;
     }
 
     const currentEmail = getCurrentUserEmail();
-    const rawOrders = readOrders();
+    const localOrders = readOrders();
+    const apiResult = await loadOrdersFromApi(currentEmail);
+    const rawOrders = apiResult.mode === "ok"
+      ? apiResult.orders.concat(localOrders)
+      : localOrders;
     const normalizedOrders = normalizeOrders(rawOrders, currentEmail);
 
     orderList.innerHTML = "";
 
     if (!normalizedOrders.length) {
+      if (apiResult.mode === "error") {
+        orderStatusMsg.textContent = "Unable to load order status right now. Please try again.";
+        orderStatusMsg.classList.add("error");
+        return;
+      }
       orderStatusMsg.textContent = "No orders yet. Your next booking will appear here.";
       orderStatusMsg.classList.remove("error");
       return;
     }
 
     orderStatusMsg.textContent = "";
+    orderStatusMsg.classList.remove("error");
     normalizedOrders.forEach((order) => {
       const card = document.createElement("article");
       card.className = "order-item";
+      const statusClass = getStatusClassName(order.status, order.fulfillmentStatus);
       card.innerHTML = `
-        <h3>${escapeHtml(order.orderId)}</h3>
-        <p>Model: ${escapeHtml(order.model)}</p>
-        <p class="order-meta">Status: ${escapeHtml(order.status)}</p>
+        <div class="order-item-head">
+          <h3>${escapeHtml(order.orderId)}</h3>
+          <span class="order-date">${escapeHtml(formatOrderDate(order.createdAt))}</span>
+        </div>
+        <p class="order-line">Model: ${escapeHtml(order.model)}</p>
+        <p class="order-line">Service: ${escapeHtml(order.service)}</p>
+        <p class="order-line">Payment: ${escapeHtml(order.payment)}</p>
+        <p class="order-line">Total: ${escapeHtml(formatPeso(order.total))}</p>
+        <p class="order-meta">
+          <span class="status-chip ${statusClass}">${escapeHtml(order.status)}</span>
+          <span class="fulfillment-text">${escapeHtml(order.fulfillmentStatus)}</span>
+        </p>
       `;
       orderList.appendChild(card);
     });
@@ -403,12 +504,16 @@
     setSubmitting(true);
 
     try {
-      const response = await fetch("/api/profile/settings", {
+      const response = await fetch(getApiUrl("/api/profile/settings"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          ...payload,
+          currentEmail: getCurrentUserEmail(),
+          avatar: readProfileData().avatar || ""
+        })
       });
 
       if (!response.ok) {
@@ -420,7 +525,18 @@
         throw new Error("Profile API returned unsuccessful response.");
       }
 
-      persistLocal(payload);
+      const profile = data.profile || payload;
+      persistLocal({
+        fullName: profile.fullName || payload.fullName,
+        email: profile.email || payload.email,
+        phone: profile.phone || payload.phone,
+        address: profile.address || payload.address,
+        avatar: typeof profile.avatar === "string" ? profile.avatar : (readProfileData().avatar || ""),
+        updatedAt: new Date().toISOString()
+      });
+      if (typeof profile.avatar === "string" && profile.avatar) {
+        avatarImage.src = profile.avatar;
+      }
       setStatus("Profile settings saved.", false);
     } catch (error) {
       console.warn("Profile save API unavailable. Falling back to local storage.", error);
@@ -514,12 +630,13 @@
     const hasUpper = /[A-Z]/.test(data.newSecurityPassword);
     const hasLower = /[a-z]/.test(data.newSecurityPassword);
     const hasNumber = /\d/.test(data.newSecurityPassword);
+    const hasSymbol = /[\W_]/.test(data.newSecurityPassword);
 
     if (!data.newSecurityPassword) {
       showSecurityError("newSecurityPassword", "New password is required.");
       valid = false;
-    } else if (data.newSecurityPassword.length < 8 || !hasUpper || !hasLower || !hasNumber) {
-      showSecurityError("newSecurityPassword", "Use 8+ chars with upper, lower, and number.");
+    } else if (data.newSecurityPassword.length < 8 || !hasUpper || !hasLower || !hasNumber || !hasSymbol) {
+      showSecurityError("newSecurityPassword", "Use 8+ chars with upper, lower, number, and symbol.");
       valid = false;
     }
 
@@ -546,7 +663,7 @@
       email: payload.email.trim().toLowerCase(),
       phone: payload.phone,
       address: payload.address,
-      avatar: existing.avatar || "",
+      avatar: typeof payload.avatar === "string" ? payload.avatar : (existing.avatar || ""),
       updatedAt: payload.updatedAt
     };
 
@@ -603,6 +720,51 @@
       if (!saved.avatar && currentUser.avatar) {
         avatarImage.src = currentUser.avatar;
       }
+    }
+  }
+
+  async function hydrateProfileFromApi() {
+    const currentEmail = getCurrentUserEmail();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(currentEmail)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        getApiUrl(`/api/profile/settings?email=${encodeURIComponent(currentEmail)}`),
+        { method: "GET" }
+      );
+      if (response.status === 404 || response.status === 405) {
+        return;
+      }
+
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || payload.success !== true || !payload.profile) {
+        return;
+      }
+
+      const profile = payload.profile;
+      const existing = readProfileData();
+      const merged = {
+        fullName: profile.fullName || fields.fullName.value || existing.fullName || "",
+        email: String(profile.email || currentEmail).trim().toLowerCase(),
+        phone: profile.phone || fields.phone.value || existing.phone || "",
+        address: profile.address || fields.address.value || existing.address || "",
+        avatar: typeof profile.avatar === "string" ? profile.avatar : (existing.avatar || ""),
+        updatedAt: new Date().toISOString()
+      };
+
+      fields.fullName.value = merged.fullName;
+      fields.email.value = merged.email;
+      fields.phone.value = merged.phone;
+      fields.address.value = merged.address;
+      if (merged.avatar) {
+        avatarImage.src = merged.avatar;
+      }
+
+      persistLocal(merged);
+    } catch (_error) {
+      // Keep local fallback when API is unavailable.
     }
   }
 
@@ -669,6 +831,38 @@
     }
   }
 
+  async function syncAvatarToApi(avatarValue) {
+    const currentEmail = getCurrentUserEmail();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(currentEmail)) {
+      return;
+    }
+
+    const payload = {
+      fullName: fields.fullName.value.trim(),
+      email: fields.email.value.trim() || currentEmail,
+      phone: fields.phone.value.trim().replace(/[\s-]/g, ""),
+      address: fields.address.value.trim(),
+      avatar: typeof avatarValue === "string" ? avatarValue : "",
+      currentEmail: currentEmail
+    };
+
+    if (!payload.fullName || !payload.phone || !payload.address) {
+      return;
+    }
+
+    try {
+      await fetch(getApiUrl("/api/profile/settings"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+    } catch (_error) {
+      // Keep local avatar when API is unavailable.
+    }
+  }
+
   function saveAvatar(dataUrl) {
     const existing = readProfileData();
     const nextData = {
@@ -680,6 +874,7 @@
     localStorage.setItem(activeProfileKey, JSON.stringify(nextData));
     syncCurrentUserProfile({ avatar: dataUrl, email: nextData.email });
     localStorage.removeItem(legacyStorageKey);
+    void syncAvatarToApi(dataUrl);
   }
 
   function clearSavedAvatar() {
@@ -693,6 +888,7 @@
     localStorage.setItem(activeProfileKey, JSON.stringify(nextData));
     syncCurrentUserProfile({ avatar: "", email: nextData.email });
     localStorage.removeItem(legacyStorageKey);
+    void syncAvatarToApi("");
   }
 
   function setAvatarMsg(message, isError) {
@@ -718,48 +914,116 @@
       }
     }
 
+    const latestBooking = safeParse(localStorage.getItem("latestBooking"));
+    if (latestBooking && typeof latestBooking === "object" && !Array.isArray(latestBooking)) {
+      mergedOrders.push(latestBooking);
+    }
+
     return mergedOrders;
   }
 
   function normalizeOrders(rawOrders, currentEmail) {
-    const lowerEmail = String(currentEmail || "").trim().toLowerCase();
-    const fromStorage = rawOrders
+    const lowerEmail = normalizeEmail(currentEmail);
+    const normalized = rawOrders
       .map((item, index) => {
         if (!item || typeof item !== "object") {
           return null;
         }
 
-        const itemEmail = String(item.email || item.userEmail || "").trim().toLowerCase();
-        if (lowerEmail && itemEmail !== lowerEmail) {
+        const itemEmails = [
+          normalizeEmail(item.userEmail),
+          normalizeEmail(item.email)
+        ].filter(Boolean);
+
+        if (lowerEmail && itemEmails.length && !itemEmails.includes(lowerEmail)) {
           return null;
         }
 
+        if (lowerEmail && itemEmails.length === 0) {
+          return null;
+        }
+
+        const service = String(item.service || item.deliveryOption || "Delivery");
+
         return {
           orderId: String(item.orderId || item.id || `#EC-${1000 + index}`),
-          model: String(item.model || item.productName || item.itemName || "Ecodrive Ebike"),
-          status: String(item.status || "Payment confirmed"),
+          model: String(item.model || item.productName || item.itemName || item.vehicle || "Ecodrive Ebike"),
+          status: String(item.status || "Pending review"),
+          fulfillmentStatus: String(
+            item.fulfillmentStatus
+            || (service === "Pick Up" ? "Ready to Pick up" : "In Process")
+          ),
+          service: service,
+          payment: String(item.payment || item.paymentMethod || "Unspecified"),
+          total: Number(item.total || item.subtotal || 0),
           createdAt: item.createdAt || item.updatedAt || ""
         };
       })
       .filter(Boolean);
 
-    if (fromStorage.length > 0) {
-      fromStorage.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
-
-      const deduped = [];
-      const seen = new Set();
-      fromStorage.forEach((item) => {
-        const key = `${item.orderId}|${item.model}|${item.createdAt}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          deduped.push(item);
-        }
-      });
-
-      return deduped.slice(0, 10);
+    if (!normalized.length) {
+      return [];
     }
 
-    return [];
+    normalized.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+
+    const deduped = [];
+    const seen = new Set();
+    normalized.forEach((item) => {
+      const key = `${item.orderId}|${item.createdAt}|${item.status}|${item.fulfillmentStatus}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        deduped.push(item);
+      }
+    });
+
+    return deduped.slice(0, 10);
+  }
+
+  function normalizeEmail(value) {
+    return String(value || "").trim().toLowerCase();
+  }
+
+  function formatOrderDate(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return "-";
+    }
+
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    });
+  }
+
+  function formatPeso(value) {
+    const amount = Number(value || 0);
+    return `\u20B1${amount.toLocaleString("en-PH", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`;
+  }
+
+  function getStatusClassName(statusValue, fulfillmentValue) {
+    const merged = `${String(statusValue || "")} ${String(fulfillmentValue || "")}`.toLowerCase();
+    if (merged.includes("reject")) {
+      return "rejected";
+    }
+    if (merged.includes("cancel")) {
+      return "cancelled";
+    }
+    if (merged.includes("approve")) {
+      return "approved";
+    }
+    if (
+      merged.includes("completed")
+      || merged.includes("delivered")
+      || merged.includes("ready")
+    ) {
+      return "completed";
+    }
+    return "pending";
   }
 
   function escapeHtml(value) {
@@ -847,7 +1111,7 @@
     return users.find((user) => String(user.email || "").toLowerCase() === email) || null;
   }
 
-  function updateCurrentUserPassword(currentPassword, newPassword) {
+  function updateCurrentUserPassword(currentPassword, newPassword, skipCurrentCheck) {
     const email = getCurrentUserEmail();
     if (!email) {
       return false;
@@ -856,10 +1120,10 @@
     const users = getUsers();
     const index = users.findIndex((user) => String(user.email || "").toLowerCase() === email);
     if (index < 0) {
-      return false;
+      return Boolean(skipCurrentCheck);
     }
 
-    if (String(users[index].password || "") !== currentPassword) {
+    if (!skipCurrentCheck && String(users[index].password || "") !== currentPassword) {
       return false;
     }
 

@@ -4,14 +4,58 @@
     const KYC_API_BASE = (
         localStorage.getItem("ecodrive_kyc_api_base")
         || localStorage.getItem("ecodrive_api_base")
-        || ""
-    ).trim();
+        || "http://127.0.0.1:5050"
+    )
+        .trim()
+        .replace(/\/+$/, "");
     const FACE_MODEL_URLS = [
         "https://justadudewhohacks.github.io/face-api.js/models",
         "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model"
     ];
     const FACE_MATCH_THRESHOLD = 0.52;
     const ID_VERIFICATION_MAX_AGE_MS = 20 * 60 * 1000;
+    const PH_LOCATION_TREE = {
+        "Bulacan": {
+            "Baliwag City": ["Bagong Nayon", "Concepcion", "Makinabang", "Poblacion", "Sabang"],
+            "Malolos City": ["Anilao", "Atlag", "Bulihan", "Look 1st", "Santo Rosario"],
+            "Meycauayan City": ["Banga", "Calvario", "Camalig", "Iba", "Perez"],
+            "San Jose del Monte City": ["Assumption", "Citrus", "Dulong Bayan", "Graceville", "Muzon Proper"],
+            "Plaridel": ["Agnaya", "Banga I", "Bagong Silang", "Lumang Bayan", "Poblacion"]
+        },
+        "Pampanga": {
+            "Angeles City": ["Balibago", "Cutcut", "Lourdes Sur", "Pampang", "Pulung Maragul"],
+            "City of San Fernando": ["Calulut", "Del Pilar", "Dolores", "San Agustin", "Santo Rosario"],
+            "Mabalacat City": ["Dau", "Dolores", "Mawaque", "Poblacion", "Tabun"],
+            "Apalit": ["Balucuc", "Capalangan", "Paligui", "Sampaloc", "San Vicente"]
+        },
+        "Cavite": {
+            "Bacoor City": ["Bayanan", "Mambog I", "Molinio III", "Niog", "Talaba II"],
+            "Dasmarinas City": ["Burol", "Langkaan I", "Paliparan I", "Poblacion", "Salitran II"],
+            "Imus City": ["Alapan I-A", "Anabu I-A", "Bucandala I", "Medicion I-A", "Tanzang Luma I"],
+            "General Trias City": ["Bagumbayan", "Biclatan", "Manggahan", "Santiago", "Tapia"]
+        },
+        "Laguna": {
+            "Calamba City": ["Banadero", "Canlubang", "Halang", "Poblacion 1", "Real"],
+            "San Pablo City": ["Santiago I", "San Antonio 1", "San Bartolome", "San Cristobal", "San Jose"],
+            "Santa Rosa City": ["Balibago", "Caingin", "Dita", "Macabling", "Tagapo"],
+            "Binan City": ["Canlalay", "Casile", "Malamig", "Poblacion", "San Antonio"]
+        },
+        "Rizal": {
+            "Antipolo City": ["Cupang", "Dalig", "Dela Paz", "Mambugan", "San Isidro"],
+            "Cainta": ["San Andres", "San Isidro", "San Juan", "Santo Domingo", "Santo Nino"],
+            "Taytay": ["Dolores", "Muzon", "San Juan", "Santa Ana", "Tikling"],
+            "Binangonan": ["Batingan", "Darangan", "Libis", "Pipindan", "Tatala"]
+        },
+        "Metro Manila": {
+            "City of Manila": ["Binondo", "Ermita", "Malate", "Sampaloc", "Tondo I"],
+            "Quezon City": ["Batasan Hills", "Commonwealth", "Novaliches Proper", "Pasong Tamo", "Tandang Sora"],
+            "Makati City": ["Bel-Air", "Poblacion", "San Antonio", "San Isidro", "Tejeros"],
+            "Pasig City": ["Bagong Ilog", "Kapitolyo", "Pinagbuhatan", "Rosario", "Santolan"],
+            "Taguig City": ["Fort Bonifacio", "Lower Bicutan", "Pembo", "Pinagsama", "Western Bicutan"]
+        }
+    };
+    const PSGC_API_BASE = "https://psgc.cloud/api/v2";
+    const LOCATION_FETCH_TIMEOUT_MS = 15000;
 
     const profileBtn = document.querySelector(".profile-menu .profile-btn");
     const dropdown = document.querySelector(".profile-menu .dropdown");
@@ -39,6 +83,463 @@
             return JSON.parse(raw);
         } catch (_error) {
             return null;
+        }
+    }
+
+    function getApiUrl(endpoint) {
+        return KYC_API_BASE ? `${KYC_API_BASE}${endpoint}` : endpoint;
+    }
+
+    function normalizeLocationText(value) {
+        const raw = String(value || "").trim();
+        if (!raw) {
+            return "";
+        }
+
+        const fixed = raw
+            .replace(/\u00C3\u00B1/g, "\u00F1")
+            .replace(/\u00C3\u0091/g, "\u00D1")
+            .replace(/\u00C3\u00A1/g, "\u00E1")
+            .replace(/\u00C3\u00A9/g, "\u00E9")
+            .replace(/\u00C3\u00AD/g, "\u00ED")
+            .replace(/\u00C3\u00B3/g, "\u00F3")
+            .replace(/\u00C3\u00BA/g, "\u00FA")
+            .replace(/\u00C3\u00BC/g, "\u00FC")
+            .replace(/\u00C2/g, "");
+
+        if (fixed !== raw) {
+            return fixed;
+        }
+
+        if (typeof TextDecoder === "function" && /[\u00C3\u00C2]/.test(raw)) {
+            try {
+                const bytes = new Uint8Array(Array.from(raw).map(function (char) {
+                    return char.charCodeAt(0) & 255;
+                }));
+                const decoded = new TextDecoder("utf-8").decode(bytes).trim();
+                if (decoded) {
+                    return decoded;
+                }
+            } catch (_error) {
+                return raw;
+            }
+        }
+
+        return raw;
+    }
+
+    function normalizeLookupValue(value) {
+        return normalizeLocationText(value).toLowerCase();
+    }
+
+    function findInsensitiveMatch(options, target) {
+        const lookup = normalizeLookupValue(target);
+        if (!lookup || !Array.isArray(options)) {
+            return "";
+        }
+
+        for (let i = 0; i < options.length; i += 1) {
+            if (normalizeLookupValue(options[i]) === lookup) {
+                return String(options[i]);
+            }
+        }
+
+        return "";
+    }
+
+    function toLocationArray(payload) {
+        if (Array.isArray(payload)) {
+            return payload;
+        }
+        if (payload && Array.isArray(payload.data)) {
+            return payload.data;
+        }
+        if (payload && Array.isArray(payload.items)) {
+            return payload.items;
+        }
+        if (payload && Array.isArray(payload.results)) {
+            return payload.results;
+        }
+        return [];
+    }
+
+    function normalizeLocationRows(rows) {
+        return (Array.isArray(rows) ? rows : [])
+            .map(function (row) {
+                if (!row || typeof row !== "object") {
+                    return null;
+                }
+
+                const name = normalizeLocationText(row.name || row.city || row.municipality || row.barangay || "");
+                const code = String(row.code || row.psgc_code || row.id || name).trim();
+                if (!name) {
+                    return null;
+                }
+
+                return {
+                    code: code || name,
+                    name: name
+                };
+            })
+            .filter(Boolean);
+    }
+
+    async function fetchLocationRows(url) {
+        const controller = new AbortController();
+        const timeout = setTimeout(function () {
+            controller.abort();
+        }, LOCATION_FETCH_TIMEOUT_MS);
+
+        try {
+            const response = await fetch(url, {
+                method: "GET",
+                headers: {
+                    "Accept": "application/json"
+                },
+                signal: controller.signal
+            });
+            if (!response.ok) {
+                throw new Error("Location API unavailable.");
+            }
+
+            const payload = await response.json().catch(function () {
+                return [];
+            });
+            return normalizeLocationRows(toLocationArray(payload));
+        } finally {
+            clearTimeout(timeout);
+        }
+    }
+
+    function buildFallbackProvinceRows() {
+        return Object.keys(PH_LOCATION_TREE)
+            .sort(function (a, b) {
+                return a.localeCompare(b);
+            })
+            .map(function (provinceName) {
+                return {
+                    code: "fallback:" + provinceName,
+                    name: provinceName
+                };
+            });
+    }
+
+    function buildFallbackCityRows(provinceName) {
+        const cityMap = PH_LOCATION_TREE[String(provinceName || "").trim()];
+        if (!cityMap || typeof cityMap !== "object") {
+            return [];
+        }
+
+        return Object.keys(cityMap)
+            .sort(function (a, b) {
+                return a.localeCompare(b);
+            })
+            .map(function (cityName) {
+                return {
+                    code: "fallback:" + provinceName + ":" + cityName,
+                    name: cityName
+                };
+            });
+    }
+
+    function buildFallbackBarangayRows(provinceName, cityName) {
+        const cityMap = PH_LOCATION_TREE[String(provinceName || "").trim()];
+        const list = cityMap ? cityMap[String(cityName || "").trim()] : null;
+        if (!Array.isArray(list)) {
+            return [];
+        }
+
+        return list
+            .slice()
+            .sort(function (a, b) {
+                return String(a).localeCompare(String(b));
+            })
+            .map(function (barangayName) {
+                return {
+                    code: "fallback:" + provinceName + ":" + cityName + ":" + barangayName,
+                    name: String(barangayName)
+                };
+            });
+    }
+
+    function renderSelectOptions(selectEl, options, placeholder, selectedValue) {
+        if (!selectEl) {
+            return "";
+        }
+
+        const normalizedOptions = Array.isArray(options)
+            ? options.map(function (item) {
+                return String(item || "").trim();
+            }).filter(Boolean)
+            : [];
+        const uniqueOptions = Array.from(new Set(normalizedOptions));
+        const selectedRaw = String(selectedValue || "").trim();
+        const selectedMatch = findInsensitiveMatch(uniqueOptions, selectedRaw);
+
+        selectEl.innerHTML = "";
+        const placeholderOption = document.createElement("option");
+        placeholderOption.value = "";
+        placeholderOption.textContent = placeholder;
+        selectEl.appendChild(placeholderOption);
+
+        uniqueOptions.forEach(function (optionValue) {
+            const option = document.createElement("option");
+            option.value = optionValue;
+            option.textContent = optionValue;
+            selectEl.appendChild(option);
+        });
+
+        if (selectedMatch) {
+            selectEl.value = selectedMatch;
+            return selectedMatch;
+        }
+
+        if (selectedRaw) {
+            const customOption = document.createElement("option");
+            customOption.value = selectedRaw;
+            customOption.textContent = selectedRaw;
+            selectEl.appendChild(customOption);
+            selectEl.value = selectedRaw;
+            return selectedRaw;
+        }
+
+        selectEl.value = "";
+        return "";
+    }
+
+    function setSelectLoadingState(selectEl, loadingText) {
+        if (!selectEl) {
+            return;
+        }
+
+        selectEl.innerHTML = "";
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = loadingText;
+        selectEl.appendChild(option);
+        selectEl.disabled = true;
+    }
+
+    function setupStep2LocationSelectors(seedData) {
+        const provinceSelect = document.getElementById("province");
+        const citySelect = document.getElementById("city");
+        const barangaySelect = document.getElementById("barangay");
+        const cityCacheByProvinceCode = new Map();
+        const barangayCacheByCityCode = new Map();
+        let provinceRows = [];
+        let cityRows = [];
+
+        if (!provinceSelect || !citySelect || !barangaySelect) {
+            return;
+        }
+
+        function buildNameCodeMap(rows) {
+            const map = {};
+            rows.forEach(function (row) {
+                map[row.name] = row.code;
+            });
+            return map;
+        }
+
+        function getMatchedProvinceName() {
+            return findInsensitiveMatch(
+                provinceRows.map(function (row) {
+                    return row.name;
+                }),
+                provinceSelect.value
+            );
+        }
+
+        function getMatchedCityName() {
+            return findInsensitiveMatch(
+                cityRows.map(function (row) {
+                    return row.name;
+                }),
+                citySelect.value
+            );
+        }
+
+        async function loadProvinces(selectedProvince) {
+            setSelectLoadingState(provinceSelect, "Loading provinces...");
+            setSelectLoadingState(citySelect, "Select city / municipality");
+            setSelectLoadingState(barangaySelect, "Select barangay");
+
+            let rows = [];
+            try {
+                rows = await fetchLocationRows(PSGC_API_BASE + "/provinces");
+            } catch (_error) {
+                rows = [];
+            }
+
+            if (!rows.length) {
+                rows = buildFallbackProvinceRows();
+            }
+
+            provinceRows = rows;
+            const provinceNames = rows.map(function (row) {
+                return row.name;
+            });
+
+            renderSelectOptions(
+                provinceSelect,
+                provinceNames,
+                "Select province",
+                selectedProvince
+            );
+            provinceSelect.disabled = false;
+        }
+
+        async function loadCities(provinceName, selectedCity, selectedBarangay) {
+            const matchedProvinceName = findInsensitiveMatch(
+                provinceRows.map(function (row) {
+                    return row.name;
+                }),
+                provinceName
+            );
+
+            if (!matchedProvinceName) {
+                cityRows = [];
+                renderSelectOptions(citySelect, [], "Select city / municipality", "");
+                renderSelectOptions(barangaySelect, [], "Select barangay", "");
+                citySelect.disabled = true;
+                barangaySelect.disabled = true;
+                return;
+            }
+
+            const provinceCodeMap = buildNameCodeMap(provinceRows);
+            const provinceCode = provinceCodeMap[matchedProvinceName];
+            const cacheKey = provinceCode || matchedProvinceName;
+
+            setSelectLoadingState(citySelect, "Loading cities / municipalities...");
+            setSelectLoadingState(barangaySelect, "Select barangay");
+
+            let rows = cityCacheByProvinceCode.get(cacheKey) || [];
+            if (!rows.length) {
+                if (String(cacheKey).startsWith("fallback:")) {
+                    rows = buildFallbackCityRows(matchedProvinceName);
+                } else {
+                    try {
+                        rows = await fetchLocationRows(
+                            PSGC_API_BASE + "/provinces/" + encodeURIComponent(cacheKey) + "/cities-municipalities"
+                        );
+                    } catch (_error) {
+                        rows = [];
+                    }
+                }
+
+                if (!rows.length) {
+                    rows = buildFallbackCityRows(matchedProvinceName);
+                }
+                cityCacheByProvinceCode.set(cacheKey, rows);
+            }
+
+            cityRows = rows;
+            const cityNames = rows.map(function (row) {
+                return row.name;
+            });
+            const chosenCity = renderSelectOptions(
+                citySelect,
+                cityNames,
+                "Select city / municipality",
+                selectedCity
+            );
+            citySelect.disabled = false;
+
+            await loadBarangays(matchedProvinceName, chosenCity, selectedBarangay);
+        }
+
+        async function loadBarangays(provinceName, cityName, selectedBarangay) {
+            const matchedCityName = findInsensitiveMatch(
+                cityRows.map(function (row) {
+                    return row.name;
+                }),
+                cityName
+            );
+
+            if (!matchedCityName) {
+                renderSelectOptions(barangaySelect, [], "Select barangay", "");
+                barangaySelect.disabled = true;
+                return;
+            }
+
+            const cityCodeMap = buildNameCodeMap(cityRows);
+            const cityCode = cityCodeMap[matchedCityName];
+            const cacheKey = cityCode || matchedCityName;
+
+            setSelectLoadingState(barangaySelect, "Loading barangays...");
+
+            let rows = barangayCacheByCityCode.get(cacheKey) || [];
+            if (!rows.length) {
+                if (String(cacheKey).startsWith("fallback:")) {
+                    rows = buildFallbackBarangayRows(provinceName, matchedCityName);
+                } else {
+                    try {
+                        rows = await fetchLocationRows(
+                            PSGC_API_BASE + "/cities-municipalities/" + encodeURIComponent(cacheKey) + "/barangays"
+                        );
+                    } catch (_error) {
+                        rows = [];
+                    }
+                }
+
+                if (!rows.length) {
+                    rows = buildFallbackBarangayRows(provinceName, matchedCityName);
+                }
+                barangayCacheByCityCode.set(cacheKey, rows);
+            }
+
+            const barangayNames = rows.map(function (row) {
+                return row.name;
+            });
+            renderSelectOptions(
+                barangaySelect,
+                barangayNames,
+                "Select barangay",
+                selectedBarangay
+            );
+            barangaySelect.disabled = false;
+        }
+
+        provinceSelect.addEventListener("change", function () {
+            void loadCities(provinceSelect.value, "", "");
+        });
+
+        citySelect.addEventListener("change", function () {
+            const matchedProvinceName = getMatchedProvinceName() || provinceSelect.value;
+            const matchedCityName = getMatchedCityName() || citySelect.value;
+            void loadBarangays(matchedProvinceName, matchedCityName, "");
+        });
+
+        void (async function initializeSelectors() {
+            await loadProvinces(seedData && seedData.province);
+            await loadCities(
+                provinceSelect.value,
+                seedData && seedData.city,
+                seedData && seedData.barangay
+            );
+        })();
+    }
+
+    async function saveBookingToApi(record) {
+        try {
+            const response = await fetch(getApiUrl("/api/bookings"), {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(record)
+            });
+
+            if (response.status === 404 || response.status === 405) {
+                return false;
+            }
+
+            const payload = await response.json().catch(function () {
+                return {};
+            });
+            return response.ok && payload && payload.success === true;
+        } catch (_error) {
+            return false;
         }
     }
 
@@ -99,6 +600,10 @@
     }
 
     async function startCamera(videoEl, facingMode) {
+        if (!window.isSecureContext) {
+            throw new Error("Camera requires HTTPS on mobile. Open this page using an https:// URL.");
+        }
+
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             throw new Error("Camera is not supported by this browser.");
         }
@@ -116,6 +621,28 @@
         activeStream = stream;
         videoEl.srcObject = stream;
         await videoEl.play();
+    }
+
+    function formatCameraError(error) {
+        const name = String(error && error.name ? error.name : "");
+        const message = String(error && error.message ? error.message : "");
+
+        if (!window.isSecureContext) {
+            return "Camera needs HTTPS on mobile. Use an https:// URL.";
+        }
+        if (name === "NotAllowedError") {
+            return "Camera permission denied. Allow camera access in browser settings.";
+        }
+        if (name === "NotFoundError") {
+            return "No camera detected on this device.";
+        }
+        if (name === "NotReadableError") {
+            return "Camera is busy. Close other apps using camera and try again.";
+        }
+        if (name === "SecurityError") {
+            return "Camera access blocked. Use HTTPS and allow permissions.";
+        }
+        return message || "Unable to open camera.";
     }
 
     function captureFrame(videoEl, canvasEl) {
@@ -288,7 +815,7 @@
         }, 18000);
 
         try {
-            const response = await fetch(KYC_API_BASE + endpoint, {
+            const response = await fetch(getApiUrl(endpoint), {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -528,7 +1055,7 @@
         const data = getInstallmentFormData();
         const fields = [
             "firstName", "middleName", "lastName", "gender", "age", "personalEmail",
-            "province", "cellphone", "zipCode", "street", "city", "civilStatus", "dob",
+            "cellphone", "zipCode", "street", "civilStatus", "dob",
             "nationality", "monthsToPay"
         ];
 
@@ -544,6 +1071,8 @@
         if (emailInput && !emailInput.value && draft && draft.email) {
             emailInput.value = draft.email;
         }
+
+        return data;
     }
 
     function seedStep3() {
@@ -558,7 +1087,8 @@
         });
     }
 
-    function appendBookingRecord(record) {
+    async function appendBookingRecord(record) {
+        await saveBookingToApi(record);
         let existing = [];
         try {
             const parsed = safeParse(localStorage.getItem("ecodrive_bookings"));
@@ -572,6 +1102,55 @@
         existing.push(record);
         localStorage.setItem("ecodrive_bookings", JSON.stringify(existing));
         localStorage.setItem("latestBooking", JSON.stringify(record));
+    }
+
+    function setupStep1Notice() {
+        const form = document.getElementById("installmentNoticeForm");
+        const reminderAgree = document.getElementById("photoReminderAgree");
+        const error = document.getElementById("idStepError");
+
+        if (!form) {
+            return;
+        }
+
+        const existing = getInstallmentFormData();
+
+        form.addEventListener("submit", function (event) {
+            event.preventDefault();
+            if (error) {
+                error.textContent = "";
+            }
+
+            if (!reminderAgree || !reminderAgree.checked) {
+                if (error) {
+                    error.textContent = "Please confirm that you will bring a 2x2 picture.";
+                }
+                return;
+            }
+
+            const timestamp = new Date().toISOString();
+            const next = {
+                ...existing,
+                idType: "Manual 2x2 Picture Requirement",
+                kycFlowId: existing.kycFlowId || createKycFlowId(),
+                kycFlowStage: "face-verified",
+                idVerified: true,
+                idImageDataUrl: "",
+                idVerificationToken: "",
+                idVerificationSource: "manual-requirement",
+                idVerificationReason: "Customer reminded to bring a 2x2 picture.",
+                idVerifiedAt: timestamp,
+                faceVerified: true,
+                faceDistance: "",
+                faceVerifiedAt: timestamp,
+                identityVerifiedAt: timestamp,
+                termsAgree: true,
+                manualPhotoReminder: true
+            };
+
+            setInstallmentFormData(next);
+            window.location.href = "installment-step2.html";
+        });
     }
 
     function setupStep1Id() {
@@ -623,7 +1202,7 @@
                 await startCamera(idVideo, "environment");
                 setStatus(idStatus, "Camera ready. Place ID in frame then click Scan ID.", "running");
             } catch (cameraError) {
-                setStatus(idStatus, cameraError.message || "Unable to open ID camera.", "error");
+                setStatus(idStatus, formatCameraError(cameraError), "error");
             }
         });
 
@@ -668,7 +1247,7 @@
             }
         });
 
-        form.addEventListener("submit", function (event) {
+        form.addEventListener("submit", async function (event) {
             event.preventDefault();
             if (error) {
                 error.textContent = "";
@@ -761,7 +1340,7 @@
                 await startCamera(faceVideo, "user");
                 setStatus(faceStatus, "Camera ready. Face forward then click Scan Face.", "running");
             } catch (cameraError) {
-                setStatus(faceStatus, cameraError.message || "Unable to open face camera.", "error");
+                setStatus(faceStatus, formatCameraError(cameraError), "error");
             }
         });
 
@@ -801,7 +1380,7 @@
             }
         });
 
-        form.addEventListener("submit", function (event) {
+        form.addEventListener("submit", async function (event) {
             event.preventDefault();
             if (error) {
                 error.textContent = "";
@@ -850,7 +1429,8 @@
             return;
         }
 
-        seedStep2();
+        const seededData = seedStep2();
+        setupStep2LocationSelectors(seededData);
 
         form.addEventListener("submit", function (event) {
             event.preventDefault();
@@ -870,13 +1450,14 @@
                 zipCode: (document.getElementById("zipCode").value || "").trim(),
                 street: (document.getElementById("street").value || "").trim(),
                 city: (document.getElementById("city").value || "").trim(),
+                barangay: (document.getElementById("barangay").value || "").trim(),
                 civilStatus: (document.getElementById("civilStatus").value || "").trim(),
                 dob: (document.getElementById("dob").value || "").trim(),
                 nationality: (document.getElementById("nationality").value || "").trim(),
                 monthsToPay: (document.getElementById("monthsToPay").value || "").trim()
             };
 
-            if (!data.firstName || !data.lastName || !data.gender || !data.age || !data.personalEmail || !data.province || !data.cellphone || !data.zipCode || !data.street || !data.city || !data.civilStatus || !data.dob || !data.nationality || !data.monthsToPay) {
+            if (!data.firstName || !data.lastName || !data.gender || !data.age || !data.personalEmail || !data.province || !data.cellphone || !data.zipCode || !data.street || !data.city || !data.barangay || !data.civilStatus || !data.dob || !data.nationality || !data.monthsToPay) {
                 if (error) {
                     error.textContent = "Please complete all required fields.";
                 }
@@ -915,7 +1496,7 @@
 
         seedStep3();
 
-        form.addEventListener("submit", function (event) {
+        form.addEventListener("submit", async function (event) {
             event.preventDefault();
             if (error) {
                 error.textContent = "";
@@ -965,18 +1546,19 @@
                 installment: merged
             };
 
-            appendBookingRecord(bookingRecord);
+            await appendBookingRecord(bookingRecord);
             localStorage.removeItem(INSTALLMENT_CHECKOUT_KEY);
             window.location.href = "installment-success.html";
         });
     }
 
     if (step === "1-id") {
-        setupStep1Id();
+        setupStep1Notice();
     }
 
     if (step === "1-face") {
-        setupStep1Face();
+        window.location.href = "installment-step1.html";
+        return;
     }
 
     if (step === "2") {
@@ -991,3 +1573,4 @@
         localStorage.removeItem(INSTALLMENT_FORM_KEY);
     }
 })();
+

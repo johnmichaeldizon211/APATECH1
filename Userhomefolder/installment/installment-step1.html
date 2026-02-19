@@ -1,15 +1,14 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ecodrive - Installment ID Verification</title>
+    <title>Ecodrive - Installment Requirements</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="installment.css">
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js" defer></script>
+    <script src="../../session.js" defer></script>
     <script src="installment.js" defer></script>
 </head>
 <body data-step="1-id">
@@ -45,13 +44,13 @@
         <header class="page-head">
             <div>
                 <h1>Installment Application</h1>
-                <p>ID Verification</p>
+                <p>Requirements Reminder</p>
             </div>
 
             <ol class="stepper" aria-label="Installment steps">
                 <li class="active">
                     <span class="dot">1</span>
-                    <span class="step-copy">Proof of Identification</span>
+                    <span class="step-copy">2x2 Picture Reminder</span>
                 </li>
                 <li>
                     <span class="dot">2</span>
@@ -65,43 +64,22 @@
         </header>
 
         <section class="installment-card">
-            <form id="installmentIdForm" novalidate>
-                <div class="top-row">
-                    <label class="id-type-field" for="idType">
-                        <span>Type of ID</span>
-                        <select id="idType" name="idType" required>
-                            <option value="">Select ID</option>
-                            <option value="Passport">Passport</option>
-                            <option value="Driver License">Driver License</option>
-                            <option value="National ID">National ID</option>
-                            <option value="UMID">UMID</option>
-                        </select>
-                    </label>
-                </div>
+            <form id="installmentNoticeForm" novalidate>
+                <p class="scan-flow-note">Please bring one recent 2x2 picture when applying for installment.</p>
 
-                <p class="scan-flow-note">Open camera, scan your government ID, and complete verification before proceeding.</p>
+                <article class="reminder-card">
+                    <h2>Important Reminder</h2>
+                    <p>For installment applications, bring your printed 2x2 picture to Ecodrive during verification.</p>
+                    <p>No camera scan is required on this page.</p>
+                </article>
 
-                <div class="scan-grid">
-                    <article class="scan-card">
-                        <h2>ID Camera</h2>
-                        <video id="idVideo" class="scan-video" playsinline autoplay muted></video>
-                    </article>
-
-                    <article class="scan-card">
-                        <h2>Captured ID</h2>
-                        <canvas id="idCanvas" class="scan-canvas"></canvas>
-                    </article>
-                </div>
-
-                <div class="scan-actions">
-                    <button type="button" class="scan-btn" id="openIdCameraBtn">Open Camera</button>
-                    <button type="button" class="scan-btn primary" id="captureIdBtn">Scan ID</button>
-                </div>
-
-                <p id="idStatus" class="scan-status pending">ID not verified yet.</p>
+                <label class="terms-row" for="photoReminderAgree">
+                    <input type="checkbox" id="photoReminderAgree">
+                    <span>I understand and I will bring a 2x2 picture.</span>
+                </label>
 
                 <div class="action-row right">
-                    <button type="submit" class="action-btn">Next</button>
+                    <button type="submit" class="action-btn">Proceed to Step 2</button>
                 </div>
                 <p id="idStepError" class="form-error" aria-live="polite"></p>
             </form>
@@ -109,3 +87,5 @@
     </main>
 </body>
 </html>
+
+

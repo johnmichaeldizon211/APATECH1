@@ -10,6 +10,7 @@
     const emailInput = document.getElementById("email");
     const phoneInput = document.getElementById("phone");
     const shipAddressInput = document.getElementById("ship-address");
+    const shipLabel = document.querySelector("label[for='ship-address']");
     const shipMapPanel = document.getElementById("ship-map-panel");
     const shipMapFrame = document.getElementById("ship-map-frame");
     const shipMapStatus = document.getElementById("ship-map-status");
@@ -76,7 +77,16 @@
     const USERS_KEY = "users";
     const PAYMENT_SETTINGS_KEY = "ecodrive_payment_settings";
     const bookingStorageKeys = ["ecodrive_bookings", "ecodrive_orders", "orders"];
+    const API_BASE = String(
+        localStorage.getItem("ecodrive_api_base")
+        || localStorage.getItem("ecodrive_kyc_api_base")
+        || "http://127.0.0.1:5050"
+    )
+        .trim()
+        .replace(/\/+$/, "");
     const DEFAULT_MAP_COORDS = { lat: 14.5995, lng: 120.9842 };
+    const PICKUP_SHOP_ADDRESS = "Poblacion Baliuag beside Southstar Drugs and Xaviery near St. Marys College";
+    const PICKUP_SHOP_FALLBACK_COORDS = { lat: 14.9547, lng: 120.9009 };
 
     let selectedService = "Delivery";
     let selectedPayment = "GCASH";
@@ -87,6 +97,12 @@
     let rememberedDeliveryCoords = null;
     let lastMappedAddressToken = "";
     let addressDebounceTimer = null;
+    let pickupCoords = {
+        lat: PICKUP_SHOP_FALLBACK_COORDS.lat,
+        lng: PICKUP_SHOP_FALLBACK_COORDS.lng
+    };
+    let pickupCoordsResolved = false;
+    let pickupLookupPromise = null;
 
     if (profileBtn && dropdown) {
         profileBtn.addEventListener("click", function (event) {
@@ -109,6 +125,10 @@
         } catch (_error) {
             return null;
         }
+    }
+
+    function getApiUrl(path) {
+        return API_BASE ? `${API_BASE}${path}` : path;
     }
 
     function formatPeso(amount) {
@@ -318,6 +338,118 @@
             + encodeURIComponent(markerLat + "," + markerLng);
     }
 
+    function getMapPageUrl(lat, lng) {
+        const markerLat = Number(lat || 0).toFixed(6);
+        const markerLng = Number(lng || 0).toFixed(6);
+        return "https://www.openstreetmap.org/?mlat="
+            + encodeURIComponent(markerLat)
+            + "&mlon="
+            + encodeURIComponent(markerLng)
+            + "#map=18/"
+            + encodeURIComponent(markerLat)
+            + "/"
+            + encodeURIComponent(markerLng);
+    }
+
+    function setAddressLabel(text) {
+        if (shipLabel) {
+            shipLabel.textContent = String(text || "");
+        }
+    }
+
+    function setShippingCoords(lat, lng) {
+        const nextLat = Number(lat);
+        const nextLng = Number(lng);
+        if (!Number.isFinite(nextLat) || !Number.isFinite(nextLng)) {
+            return false;
+        }
+        shippingCoords = {
+            lat: Number(nextLat.toFixed(6)),
+            lng: Number(nextLng.toFixed(6))
+        };
+        return true;
+    }
+
+    function applyPickupLocationState(statusMessage) {
+        shipAddressInput.disabled = false;
+        shipAddressInput.readOnly = true;
+        shipAddressInput.value = PICKUP_SHOP_ADDRESS;
+        shipAddressInput.placeholder = PICKUP_SHOP_ADDRESS;
+        setMapEnabled(true);
+        findAddressBtn.textContent = "Open Shop Map";
+        useLocationBtn.disabled = true;
+        setShippingCoords(pickupCoords.lat, pickupCoords.lng);
+        renderMapFrame(pickupCoords.lat, pickupCoords.lng);
+        lastMappedAddressToken = PICKUP_SHOP_ADDRESS.toLowerCase();
+        setMapStatus(statusMessage || "Pick up location pinned to Ecodrive shop.", false);
+    }
+
+    async function fetchAddressCoordinates(address) {
+        const trimmed = String(address || "").trim();
+        if (!trimmed) {
+            throw new Error("Address is required.");
+        }
+
+        const params = new URLSearchParams({
+            format: "jsonv2",
+            limit: "1",
+            countrycodes: "ph",
+            q: trimmed
+        });
+        const response = await fetch("https://nominatim.openstreetmap.org/search?" + params.toString(), {
+            method: "GET",
+            headers: { "Accept": "application/json" }
+        });
+
+        if (!response.ok) {
+            throw new Error("Map service is unavailable right now.");
+        }
+
+        const rows = await response.json();
+        if (!Array.isArray(rows) || rows.length < 1) {
+            throw new Error("Location not found. Please make your address more specific.");
+        }
+
+        const row = rows[0];
+        const lat = Number(row.lat);
+        const lng = Number(row.lon);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+            throw new Error("Map service returned invalid coordinates.");
+        }
+
+        return {
+            lat: lat,
+            lng: lng
+        };
+    }
+
+    async function resolvePickupCoordinates() {
+        if (pickupCoordsResolved) {
+            return pickupCoords;
+        }
+        if (pickupLookupPromise) {
+            return pickupLookupPromise;
+        }
+
+        pickupLookupPromise = fetchAddressCoordinates(PICKUP_SHOP_ADDRESS)
+            .then(function (coords) {
+                pickupCoords = {
+                    lat: Number(coords.lat.toFixed(6)),
+                    lng: Number(coords.lng.toFixed(6))
+                };
+                pickupCoordsResolved = true;
+                return pickupCoords;
+            })
+            .catch(function () {
+                return null;
+            })
+            .finally(function () {
+                pickupLookupPromise = null;
+            });
+
+        return pickupLookupPromise;
+    }
+
     function renderMapFrame(lat, lng) {
         shipMapFrame.src = getMapEmbedUrl(lat, lng);
     }
@@ -390,32 +522,9 @@
         }
 
         try {
-            const params = new URLSearchParams({
-                format: "jsonv2",
-                limit: "1",
-                countrycodes: "ph",
-                q: trimmed
-            });
-            const response = await fetch("https://nominatim.openstreetmap.org/search?" + params.toString(), {
-                method: "GET",
-                headers: { "Accept": "application/json" }
-            });
-
-            if (!response.ok) {
-                throw new Error("Map service is unavailable right now.");
-            }
-
-            const rows = await response.json();
-            if (!Array.isArray(rows) || rows.length < 1) {
-                throw new Error("Location not found. Please make your address more specific.");
-            }
-
-            const row = rows[0];
-            const lat = Number(row.lat);
-            const lng = Number(row.lon);
-            if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-                throw new Error("Map service returned invalid coordinates.");
-            }
+            const coords = await fetchAddressCoordinates(trimmed);
+            const lat = Number(coords.lat);
+            const lng = Number(coords.lng);
 
             updateMapFrame(lat, lng, "Location found on map.");
             rememberedDeliveryAddress = trimmed;
@@ -480,9 +589,23 @@
         totalEl.innerHTML = formatPeso(grandTotal);
 
         if (selectedService === "Delivery") {
+            setAddressLabel("Shipping Address");
             shipAddressInput.disabled = false;
+            shipAddressInput.readOnly = false;
             shipAddressInput.placeholder = "Enter shipping address";
             setMapEnabled(true);
+            findAddressBtn.textContent = "Find on Map";
+            useLocationBtn.disabled = false;
+
+            if ((shipAddressInput.value || "").trim() === PICKUP_SHOP_ADDRESS) {
+                shipAddressInput.value = rememberedDeliveryAddress || "";
+                shippingCoords = rememberedDeliveryCoords
+                    ? {
+                        lat: rememberedDeliveryCoords.lat,
+                        lng: rememberedDeliveryCoords.lng
+                    }
+                    : null;
+            }
 
             if (!shipAddressInput.value && rememberedDeliveryAddress) {
                 shipAddressInput.value = rememberedDeliveryAddress;
@@ -496,18 +619,32 @@
             return;
         }
 
+        if (selectedService === "Pick Up") {
+            setAddressLabel("Pick Up Location");
+            applyPickupLocationState("Pick up location pinned to Ecodrive shop.");
+            void resolvePickupCoordinates().then(function (coords) {
+                if (coords && selectedService === "Pick Up") {
+                    applyPickupLocationState("Pick up location pinned to Ecodrive shop.");
+                }
+            });
+            return;
+        }
+
+        setAddressLabel("Shipping Address");
+        shipAddressInput.readOnly = true;
         shipAddressInput.disabled = true;
         shipAddressInput.value = "";
         shippingCoords = null;
         lastMappedAddressToken = "";
         setMapEnabled(false);
+        findAddressBtn.textContent = "Find on Map";
 
-        if (selectedService === "Pick Up") {
-            shipAddressInput.placeholder = "Not needed for pick up";
-            setMapStatus("Shipping map is not required for pick up.", false);
-        } else {
+        if (selectedService === "Installment") {
             shipAddressInput.placeholder = "Installment flow will continue";
             setMapStatus("Shipping map is not required for installment.", false);
+        } else {
+            shipAddressInput.placeholder = "Not needed";
+            setMapStatus("Shipping map is not required.", false);
         }
     }
 
@@ -536,7 +673,31 @@
         localStorage.setItem(storageKey, JSON.stringify(list));
     }
 
-    function saveBooking(record) {
+    async function saveBookingToApi(record) {
+        try {
+            const response = await fetch(getApiUrl("/api/bookings"), {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(record)
+            });
+
+            if (response.status === 404 || response.status === 405) {
+                return false;
+            }
+
+            const payload = await response.json().catch(function () {
+                return {};
+            });
+            return response.ok && payload && payload.success === true;
+        } catch (_error) {
+            return false;
+        }
+    }
+
+    async function saveBooking(record) {
+        await saveBookingToApi(record);
         bookingStorageKeys.forEach(function (key) {
             appendRecordToStorage(key, record);
         });
@@ -547,10 +708,19 @@
         const subtotal = Number(selectedBike.total || 0);
         const shippingFee = selectedService === "Delivery" ? 250 : 0;
         const orderId = "EC-" + Date.now();
+        const isInstallmentPayment = selectedPayment === "INSTALLMENT";
         const hasDeliveryCoordinates = selectedService === "Delivery"
             && shippingCoords
             && Number.isFinite(shippingCoords.lat)
             && Number.isFinite(shippingCoords.lng);
+        const hasPickupCoordinates = selectedService === "Pick Up"
+            && shippingCoords
+            && Number.isFinite(shippingCoords.lat)
+            && Number.isFinite(shippingCoords.lng);
+        const hasShippingCoordinates = hasDeliveryCoordinates || hasPickupCoordinates;
+        const shippingAddress = selectedService === "Delivery"
+            ? (shipAddressInput.value || "").trim()
+            : (selectedService === "Pick Up" ? PICKUP_SHOP_ADDRESS : "");
 
         return {
             orderId: orderId,
@@ -562,13 +732,15 @@
             subtotal: subtotal,
             shippingFee: shippingFee,
             total: subtotal + shippingFee,
-            payment: selectedService === "Installment" ? "Installment" : selectedPayment,
+            payment: isInstallmentPayment ? "Installment" : selectedPayment,
             service: selectedService,
-            status: selectedService === "Installment" ? "Application Review" : "Pending review",
-            fulfillmentStatus: selectedService === "Pick Up" ? "Ready to Pick up" : (selectedService === "Installment" ? "Under Review" : "In Process"),
-            shippingAddress: selectedService === "Delivery" ? (shipAddressInput.value || "").trim() : "",
-            shippingCoordinates: hasDeliveryCoordinates ? { lat: shippingCoords.lat, lng: shippingCoords.lng } : null,
-            shippingMapEmbedUrl: hasDeliveryCoordinates ? getMapEmbedUrl(shippingCoords.lat, shippingCoords.lng) : "",
+            status: isInstallmentPayment ? "Application Review" : "Pending review",
+            fulfillmentStatus: isInstallmentPayment
+                ? "Under Review"
+                : (selectedService === "Pick Up" ? "Ready to Pick up" : "In Process"),
+            shippingAddress: shippingAddress,
+            shippingCoordinates: hasShippingCoordinates ? { lat: shippingCoords.lat, lng: shippingCoords.lng } : null,
+            shippingMapEmbedUrl: hasShippingCoordinates ? getMapEmbedUrl(shippingCoords.lat, shippingCoords.lng) : "",
             userEmail: getCurrentUserEmail(),
             createdAt: new Date().toISOString()
         };
@@ -834,6 +1006,17 @@
     });
 
     findAddressBtn.addEventListener("click", async function () {
+        if (selectedService === "Pick Up") {
+            applyPickupLocationState("Pick up location pinned to Ecodrive shop.");
+            window.open(getMapPageUrl(pickupCoords.lat, pickupCoords.lng), "_blank", "noopener");
+            void resolvePickupCoordinates().then(function (coords) {
+                if (coords && selectedService === "Pick Up") {
+                    applyPickupLocationState("Pick up location pinned to Ecodrive shop.");
+                }
+            });
+            return;
+        }
+
         if (selectedService !== "Delivery") {
             return;
         }
@@ -907,7 +1090,7 @@
 
         const order = buildOrderDraft();
 
-        if (order.service === "Installment") {
+        if (String(order.payment || "").toLowerCase().includes("installment")) {
             localStorage.setItem(INSTALLMENT_CHECKOUT_KEY, JSON.stringify(order));
             localStorage.removeItem(INSTALLMENT_FORM_KEY);
             window.location.href = "../installment/installment-step1.html";
@@ -915,7 +1098,7 @@
         }
 
         if (order.payment === "CASH ON DELIVERY") {
-            saveBooking(order);
+            await saveBooking(order);
             window.location.href = "success.html";
             return;
         }
@@ -935,13 +1118,13 @@
         openWalletApp(activeWalletContext);
     });
 
-    qrDone.addEventListener("click", function () {
+    qrDone.addEventListener("click", async function () {
         if (!pendingOrder) {
             closeQrModal();
             return;
         }
 
-        saveBooking(pendingOrder);
+        await saveBooking(pendingOrder);
         pendingOrder = null;
         closeQrModal();
         window.location.href = "success.html";

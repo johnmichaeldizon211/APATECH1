@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="adminorder.css">
+    <link rel="stylesheet" href="admin-font-tuning.css">
 </head>
 <body>
     <header class="topbar">
@@ -29,6 +30,7 @@
                 <a class="nav-btn" href="adminprice.html">Price Management</a>
                 <a class="nav-btn" href="adminstock.html">Stocks</a>
                 <a class="nav-btn" href="adminuser.html">Users</a>
+                <a class="nav-btn" href="adminsettings.html">Settings</a>
             </nav>
 
             <a class="logout-btn" href="../log in.html">Logout</a>
@@ -50,7 +52,9 @@
                     <span>Action</span>
                 </div>
 
-                <div class="empty-state" role="status" aria-live="polite">
+                <div id="requestRows" class="request-list" aria-live="polite"></div>
+
+                <div id="bookingEmptyState" class="empty-state" role="status" aria-live="polite">
                     <p>No booking requests yet.</p>
                     <span>New customer bookings will appear here.</span>
                 </div>
@@ -59,5 +63,9 @@
     </div>
 
     <button class="next-btn" type="button">Next <span aria-hidden="true">&#8594;</span></button>
+    <script src="../session.js"></script>
+    <script src="adminorder.js"></script>
 </body>
 </html>
+
+

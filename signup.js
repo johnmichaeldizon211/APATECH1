@@ -1,378 +1,254 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("signup-form");
-  const firstNameInput = document.getElementById("firstName");
-  const middleInitialInput = document.getElementById("middleInitial");
-  const lastNameInput = document.getElementById("lastName");
-  const emailInput = document.getElementById("email");
-  const phoneInput = document.getElementById("phone");
-  const addressInput = document.getElementById("address");
-  const passwordInput = document.getElementById("password");
-  const createBtn = document.getElementById("create-btn");
-  const toast = document.getElementById("toast");
+document.addEventListener("DOMContentLoaded", function () {
+    var form = document.getElementById("signup-form");
+    var firstNameInput = document.getElementById("firstName");
+    var middleInitialInput = document.getElementById("middleInitial");
+    var lastNameInput = document.getElementById("lastName");
+    var emailInput = document.getElementById("email");
+    var phoneInput = document.getElementById("phone");
+    var addressInput = document.getElementById("address");
+    var passwordInput = document.getElementById("password");
+    var createBtn = document.getElementById("create-btn");
+    var toast = document.getElementById("toast");
 
-  const firstNameErr = document.getElementById("firstName-error");
-  const middleInitialErr = document.getElementById("middleInitial-error");
-  const lastNameErr = document.getElementById("lastName-error");
-  const emailErr = document.getElementById("email-error");
-  const phoneErr = document.getElementById("phone-error");
-  const addressErr = document.getElementById("address-error");
-  const passwordErr = document.getElementById("password-error");
+    var firstNameErr = document.getElementById("firstName-error");
+    var middleInitialErr = document.getElementById("middleInitial-error");
+    var lastNameErr = document.getElementById("lastName-error");
+    var emailErr = document.getElementById("email-error");
+    var phoneErr = document.getElementById("phone-error");
+    var addressErr = document.getElementById("address-error");
+    var passwordErr = document.getElementById("password-error");
 
-  const passwordStrength = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
-  const currentUserKey = "ecodrive_current_user_email";
-  const usersKey = "users";
-  const API_BASE = String(
-    localStorage.getItem("ecodrive_api_base") ||
-    localStorage.getItem("ecodrive_kyc_api_base") ||
-    ""
-  )
-    .trim()
-    .replace(/\/+$/, "");
-
-  function isValidEmail(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  }
-
-  function normalizePhone(phone) {
-    const cleaned = String(phone || "").trim().replace(/[\s-]/g, "");
-    if (/^\+639\d{9}$/.test(cleaned)) {
-      return `0${cleaned.slice(3)}`;
-    }
-    if (/^639\d{9}$/.test(cleaned)) {
-      return `0${cleaned.slice(2)}`;
-    }
-    return cleaned;
-  }
-
-  function getApiUrl(path) {
-    return API_BASE ? `${API_BASE}${path}` : path;
-  }
-
-  function isValidPhone(phone) {
-    return /^(\+639|09)\d{9}$/.test(String(phone || "").trim().replace(/[\s-]/g, ""));
-  }
-
-  function normalizeMiddleInitial(value) {
-    const cleaned = String(value || "").trim().replace(/[^a-zA-Z]/g, "");
-    if (!cleaned) {
-      return "";
-    }
-    return cleaned.slice(0, 1).toUpperCase();
-  }
-
-  function buildFullName(firstName, middleInitial, lastName) {
-    const middlePart = middleInitial ? `${middleInitial}.` : "";
-    return [firstName, middlePart, lastName].filter(Boolean).join(" ");
-  }
-
-  let toastTimer = null;
-  function showToast(message, type = "success") {
-    clearTimeout(toastTimer);
-    toast.textContent = message;
-    toast.className = `toast show ${type === "success" ? "success" : "error"}`;
-    toastTimer = setTimeout(() => {
-      toast.className = "toast";
-    }, 3000);
-  }
-
-  const touched = {
-    firstName: false,
-    middleInitial: false,
-    lastName: false,
-    email: false,
-    phone: false,
-    address: false,
-    password: false
-  };
-  let formSubmitted = false;
-
-  function setError(input, errElem, message, show = true) {
-    errElem.textContent = show ? message || "" : "";
-    input.classList.toggle("invalid", show && Boolean(message));
-  }
-
-  function validate() {
-    let valid = true;
-
-    const firstName = firstNameInput.value.trim();
-    const middleInitial = normalizeMiddleInitial(middleInitialInput.value);
-    const lastName = lastNameInput.value.trim();
-    const email = emailInput.value.trim();
-    const phone = phoneInput.value.trim();
-    const address = addressInput.value.trim();
-    const password = passwordInput.value;
-
-    const firstNameMsg = firstName.length < 2 ? "Please enter your first name." : "";
-    const middleInitialMsg =
-      middleInitialInput.value.trim() && !/^[a-zA-Z][.]?$/.test(middleInitialInput.value.trim())
-        ? "Use 1 letter only for middle initial."
-        : "";
-    const lastNameMsg = lastName.length < 2 ? "Please enter your last name." : "";
-    const emailMsg = !isValidEmail(email) ? "Please enter a valid email." : "";
-    const phoneMsg = !isValidPhone(phone) ? "Use 09XXXXXXXXX or +639XXXXXXXXX." : "";
-    const addressMsg = address.length < 5 ? "Please enter a complete address." : "";
-    const passwordMsg = !passwordStrength.test(password)
-      ? "Password must be 8+ chars and include upper, lower, number & symbol."
-      : "";
-
-    if (firstNameMsg) valid = false;
-    if (middleInitialMsg) valid = false;
-    if (lastNameMsg) valid = false;
-    if (emailMsg) valid = false;
-    if (phoneMsg) valid = false;
-    if (addressMsg) valid = false;
-    if (passwordMsg) valid = false;
-
-    setError(firstNameInput, firstNameErr, firstNameMsg, touched.firstName || formSubmitted);
-    setError(middleInitialInput, middleInitialErr, middleInitialMsg, touched.middleInitial || formSubmitted);
-    setError(lastNameInput, lastNameErr, lastNameMsg, touched.lastName || formSubmitted);
-    setError(emailInput, emailErr, emailMsg, touched.email || formSubmitted);
-    setError(phoneInput, phoneErr, phoneMsg, touched.phone || formSubmitted);
-    setError(addressInput, addressErr, addressMsg, touched.address || formSubmitted);
-    setError(passwordInput, passwordErr, passwordMsg, touched.password || formSubmitted);
-
-    createBtn.disabled = !valid;
-    return valid;
-  }
-
-  function getStoredUsers() {
-    try {
-      const raw = localStorage.getItem(usersKey);
-      const parsed = raw ? JSON.parse(raw) : [];
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (_error) {
-      return [];
-    }
-  }
-
-  function getProfileStorageKey(emailValue) {
-    const email = String(emailValue || "").trim().toLowerCase();
-    return email ? `ecodrive_profile_settings::${email}` : "ecodrive_profile_settings";
-  }
-
-  function persistProfileFromSignup(payload) {
-    const key = getProfileStorageKey(payload.email);
-    let existing = {};
-    try {
-      existing = JSON.parse(localStorage.getItem(key) || "{}");
-    } catch (_error) {
-      existing = {};
+    if (!form || !createBtn) {
+        return;
     }
 
-    const profile = {
-      fullName: payload.name,
-      email: payload.email,
-      phone: payload.phone,
-      address: payload.address,
-      avatar: typeof existing.avatar === "string" ? existing.avatar : "",
-      updatedAt: new Date().toISOString()
+    var touched = {
+        firstName: false,
+        middleInitial: false,
+        lastName: false,
+        email: false,
+        phone: false,
+        address: false,
+        password: false
     };
+    var submitted = false;
 
-    localStorage.setItem(key, JSON.stringify(profile));
-    localStorage.removeItem("ecodrive_profile_settings");
-  }
-
-  function upsertUserLocally(payload) {
-    const users = getStoredUsers();
-    const index = users.findIndex((u) => String(u.email || "").toLowerCase() === payload.email);
-
-    if (index >= 0) {
-      users[index] = {
-        ...users[index],
-        firstName: payload.firstName,
-        middleInitial: payload.middleInitial,
-        lastName: payload.lastName,
-        name: payload.name,
-        email: payload.email,
-        phone: payload.phone,
-        address: payload.address,
-        password: payload.password,
-        role: payload.role || "user",
-        isBlocked: Boolean(payload.isBlocked),
-        createdAt: payload.createdAt || (index >= 0 ? users[index].createdAt : new Date().toISOString())
-      };
-    } else {
-      users.push(payload);
+    function getApiUrl(path) {
+        if (window.EcodriveSession && typeof window.EcodriveSession.getApiUrl === "function") {
+            return window.EcodriveSession.getApiUrl(path);
+        }
+        var base = String(
+            localStorage.getItem("ecodrive_api_base") ||
+            localStorage.getItem("ecodrive_kyc_api_base") ||
+            "http://127.0.0.1:5050"
+        )
+            .trim()
+            .replace(/\/+$/, "");
+        return base + path;
     }
 
-    localStorage.setItem(usersKey, JSON.stringify(users));
-    persistProfileFromSignup(payload);
-    localStorage.setItem(currentUserKey, payload.email);
-  }
-
-  function isPhoneTaken(phoneValue, users) {
-    const normalized = normalizePhone(phoneValue);
-    return users.some((u) => normalizePhone(u.phone) === normalized);
-  }
-
-  function saveAccountLocally(payload) {
-    const users = getStoredUsers();
-    if (users.some((u) => String(u.email || "").toLowerCase() === payload.email)) {
-      setError(emailInput, emailErr, "An account with this email already exists.");
-      emailInput.focus();
-      return false;
+    function normalizeMiddleInitial(value) {
+        var cleaned = String(value || "").trim().replace(/[^a-zA-Z]/g, "");
+        return cleaned ? cleaned.slice(0, 1).toUpperCase() : "";
     }
 
-    if (isPhoneTaken(payload.phone, users)) {
-      setError(phoneInput, phoneErr, "This mobile number is already in use.");
-      phoneInput.focus();
-      return false;
+    function normalizePhone(value) {
+        var cleaned = String(value || "").trim().replace(/[\s-]/g, "");
+        if (/^\+639\d{9}$/.test(cleaned)) {
+            return "0" + cleaned.slice(3);
+        }
+        if (/^639\d{9}$/.test(cleaned)) {
+            return "0" + cleaned.slice(2);
+        }
+        return cleaned;
     }
 
-    users.push(payload);
-    localStorage.setItem(usersKey, JSON.stringify(users));
-    persistProfileFromSignup(payload);
-    localStorage.setItem(currentUserKey, payload.email);
-    showToast("Account created successfully (local).", "success");
-    setTimeout(() => (window.location.href = "Userhomefolder/userhome.html"), 850);
-    return true;
-  }
+    function isValidEmail(value) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+    }
 
-  document.querySelectorAll(".toggle-password").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const target = document.getElementById(btn.dataset.target);
-      if (!target) return;
-      const isHidden = target.type === "password";
-      target.type = isHidden ? "text" : "password";
-      btn.textContent = isHidden ? "Hide" : "Show";
+    function isValidPhone(value) {
+        return /^(\+639|09)\d{9}$/.test(String(value || "").trim().replace(/[\s-]/g, ""));
+    }
+
+    function isStrongPassword(value) {
+        return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/.test(String(value || ""));
+    }
+
+    function setFieldError(input, errorNode, message, show) {
+        if (!input || !errorNode) {
+            return;
+        }
+        errorNode.textContent = show ? String(message || "") : "";
+        input.classList.toggle("invalid", Boolean(show && message));
+    }
+
+    function showToast(message, type) {
+        if (!toast) {
+            return;
+        }
+        toast.textContent = String(message || "");
+        toast.className = "toast show " + (type === "error" ? "error" : "success");
+        window.setTimeout(function () {
+            toast.className = "toast";
+        }, 3000);
+    }
+
+    function validateForm() {
+        var firstName = String(firstNameInput.value || "").trim();
+        var middleInitialRaw = String(middleInitialInput.value || "").trim();
+        var lastName = String(lastNameInput.value || "").trim();
+        var email = String(emailInput.value || "").trim();
+        var phone = String(phoneInput.value || "").trim();
+        var address = String(addressInput.value || "").trim();
+        var password = String(passwordInput.value || "");
+
+        var firstNameMsg = firstName.length < 2 ? "Please enter your first name." : "";
+        var middleInitialMsg = (
+            middleInitialRaw &&
+            !/^[a-zA-Z][.]?$/.test(middleInitialRaw)
+        ) ? "Use one letter only for middle initial." : "";
+        var lastNameMsg = lastName.length < 2 ? "Please enter your last name." : "";
+        var emailMsg = !isValidEmail(email) ? "Please enter a valid email." : "";
+        var phoneMsg = !isValidPhone(phone) ? "Use 09XXXXXXXXX or +639XXXXXXXXX." : "";
+        var addressMsg = address.length < 5 ? "Please enter a complete address." : "";
+        var passwordMsg = !isStrongPassword(password)
+            ? "Password must be 8+ chars and include upper, lower, number and symbol."
+            : "";
+
+        setFieldError(firstNameInput, firstNameErr, firstNameMsg, touched.firstName || submitted);
+        setFieldError(middleInitialInput, middleInitialErr, middleInitialMsg, touched.middleInitial || submitted);
+        setFieldError(lastNameInput, lastNameErr, lastNameMsg, touched.lastName || submitted);
+        setFieldError(emailInput, emailErr, emailMsg, touched.email || submitted);
+        setFieldError(phoneInput, phoneErr, phoneMsg, touched.phone || submitted);
+        setFieldError(addressInput, addressErr, addressMsg, touched.address || submitted);
+        setFieldError(passwordInput, passwordErr, passwordMsg, touched.password || submitted);
+
+        var valid = !firstNameMsg && !middleInitialMsg && !lastNameMsg && !emailMsg && !phoneMsg && !addressMsg && !passwordMsg;
+        createBtn.disabled = !valid;
+        return valid;
+    }
+
+    [
+        { key: "firstName", input: firstNameInput },
+        { key: "middleInitial", input: middleInitialInput },
+        { key: "lastName", input: lastNameInput },
+        { key: "email", input: emailInput },
+        { key: "phone", input: phoneInput },
+        { key: "address", input: addressInput },
+        { key: "password", input: passwordInput }
+    ].forEach(function (entry) {
+        if (!entry.input) {
+            return;
+        }
+        entry.input.addEventListener("blur", function () {
+            touched[entry.key] = true;
+            validateForm();
+        });
+        entry.input.addEventListener("input", function () {
+            if (entry.key === "middleInitial") {
+                entry.input.value = normalizeMiddleInitial(entry.input.value);
+            }
+            validateForm();
+        });
     });
-  });
 
-  const trackedInputs = [
-    { key: "firstName", input: firstNameInput },
-    { key: "middleInitial", input: middleInitialInput },
-    { key: "lastName", input: lastNameInput },
-    { key: "email", input: emailInput },
-    { key: "phone", input: phoneInput },
-    { key: "address", input: addressInput },
-    { key: "password", input: passwordInput }
-  ];
-
-  trackedInputs.forEach(({ key, input }) => {
-    input.addEventListener("blur", () => {
-      touched[key] = true;
-      validate();
+    document.querySelectorAll(".toggle-password").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            var targetId = btn.getAttribute("data-target");
+            var target = targetId ? document.getElementById(targetId) : null;
+            if (!target) {
+                return;
+            }
+            var reveal = target.type === "password";
+            target.type = reveal ? "text" : "password";
+            btn.textContent = reveal ? "Hide" : "Show";
+        });
     });
-    input.addEventListener("input", () => {
-      if (key === "middleInitial") {
-        const normalized = normalizeMiddleInitial(input.value);
-        input.value = normalized;
-      }
-      validate();
-    });
-  });
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    if (!validate()) {
-      formSubmitted = true;
-      Object.keys(touched).forEach((key) => {
-        touched[key] = true;
-      });
-      validate();
-      return;
-    }
+    form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        if (!validateForm()) {
+            submitted = true;
+            Object.keys(touched).forEach(function (key) {
+                touched[key] = true;
+            });
+            validateForm();
+            return;
+        }
 
-    const firstName = firstNameInput.value.trim();
-    const middleInitial = normalizeMiddleInitial(middleInitialInput.value);
-    const lastName = lastNameInput.value.trim();
+        createBtn.disabled = true;
+        createBtn.textContent = "Creating...";
 
-    const payload = {
-      firstName: firstName,
-      middleInitial: middleInitial,
-      lastName: lastName,
-      name: buildFullName(firstName, middleInitial, lastName),
-      email: emailInput.value.trim().toLowerCase(),
-      phone: normalizePhone(phoneInput.value),
-      address: addressInput.value.trim(),
-      password: passwordInput.value,
-      role: "user",
-      isBlocked: false,
-      createdAt: new Date().toISOString()
-    };
-
-    const existingUsers = getStoredUsers();
-    if (existingUsers.some((u) => String(u.email || "").toLowerCase() === payload.email)) {
-      setError(emailInput, emailErr, "An account with this email already exists.");
-      emailInput.focus();
-      return;
-    }
-
-    if (isPhoneTaken(payload.phone, existingUsers)) {
-      setError(phoneInput, phoneErr, "This mobile number is already in use.");
-      phoneInput.focus();
-      return;
-    }
-
-    createBtn.textContent = "Creating...";
-    createBtn.disabled = true;
-
-    try {
-      const resp = await fetch(getApiUrl("/api/signup"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      const body = await resp.json().catch(() => ({}));
-
-      if (resp.ok || resp.status === 201) {
-        const serverUser = body && body.user ? body.user : {};
-        const localPayload = {
-          ...payload,
-          firstName: serverUser.firstName || payload.firstName,
-          middleInitial: serverUser.middleInitial || payload.middleInitial,
-          lastName: serverUser.lastName || payload.lastName,
-          name: serverUser.name || payload.name,
-          email: String(serverUser.email || payload.email).toLowerCase(),
-          phone: serverUser.phone || payload.phone,
-          address: serverUser.address || payload.address,
-          role: serverUser.role || "user",
-          isBlocked: String(serverUser.status || "active").toLowerCase() === "blocked",
-          createdAt: payload.createdAt
+        var payload = {
+            firstName: String(firstNameInput.value || "").trim(),
+            middleInitial: normalizeMiddleInitial(middleInitialInput.value),
+            lastName: String(lastNameInput.value || "").trim(),
+            email: String(emailInput.value || "").trim().toLowerCase(),
+            phone: normalizePhone(phoneInput.value),
+            address: String(addressInput.value || "").trim(),
+            password: String(passwordInput.value || "")
         };
-        upsertUserLocally(localPayload);
-        showToast("Account created successfully", "success");
-        setTimeout(() => (window.location.href = "Userhomefolder/userhome.html"), 850);
-        return;
-      }
 
-      if (resp.status === 409) {
-        const message = body.message || "An account with this email already exists.";
-        if (message.toLowerCase().includes("mobile")) {
-          setError(phoneInput, phoneErr, message);
-          phoneInput.focus();
-        } else {
-          setError(emailInput, emailErr, message);
-          emailInput.focus();
+        var response;
+        try {
+            response = await fetch(getApiUrl("/api/signup"), {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+        } catch (_error) {
+            showToast("API is unavailable. Please start the backend server.", "error");
+            createBtn.disabled = false;
+            createBtn.textContent = "Create account";
+            return;
         }
-        createBtn.disabled = false;
-        createBtn.textContent = "Create account";
-        return;
-      }
 
-      if (resp.status === 404 || resp.status === 405) {
-        const didSave = saveAccountLocally(payload);
+        var body = await response.json().catch(function () {
+            return {};
+        });
+
+        if (!response.ok || body.success !== true) {
+            var message = body.message || "Signup failed. Please try again.";
+            if (response.status === 409 && message.toLowerCase().includes("mobile")) {
+                setFieldError(phoneInput, phoneErr, message, true);
+            } else if (response.status === 409) {
+                setFieldError(emailInput, emailErr, message, true);
+            } else {
+                showToast(message, "error");
+            }
+            createBtn.disabled = false;
+            createBtn.textContent = "Create account";
+            return;
+        }
+
+        if (!window.EcodriveSession || typeof window.EcodriveSession.setSession !== "function") {
+            showToast("Session layer failed to load. Try refreshing the page.", "error");
+            createBtn.disabled = false;
+            createBtn.textContent = "Create account";
+            return;
+        }
+
+        var didSave = window.EcodriveSession.setSession({
+            token: String(body.token || ""),
+            user: body.user || {},
+            expiresAt: body.expiresAt ? new Date(body.expiresAt).getTime() : 0,
+            expiresInMs: Number(body.expiresInMs || 0)
+        }, true);
+
         if (!didSave) {
-          showToast("Signup endpoint not found.", "error");
+            showToast("Account created but login session failed. Please log in manually.", "error");
+            window.setTimeout(function () {
+                window.location.href = "log in.html";
+            }, 900);
+            return;
         }
-        createBtn.disabled = false;
-        createBtn.textContent = "Create account";
-        return;
-      }
 
-      showToast(body.message || "Signup failed. Please try again.", "error");
-      createBtn.disabled = false;
-      createBtn.textContent = "Create account";
-      return;
-    } catch (_err) {
-      const didSave = saveAccountLocally(payload);
-      if (!didSave) {
-        showToast("Network error. Try again later.", "error");
-        createBtn.disabled = false;
-        createBtn.textContent = "Create account";
-      }
-    }
-  });
+        showToast("Account created successfully.", "success");
+        window.setTimeout(function () {
+            window.location.href = "Userhomefolder/userhome.html";
+        }, 850);
+    });
 
-  validate();
+    validateForm();
 });

@@ -42,34 +42,44 @@
         <section class="order-card">
             <h1>Order Summary</h1>
 
-            <div class="delivery-actions" role="group" aria-label="Delivery Options">
-                <button type="button" class="mini-btn active" data-service="Delivery">Deliver</button>
-                <button type="button" class="mini-btn" data-service="Pick Up">Pick up</button>
-                <button type="button" class="mini-btn" data-service="Installment">Installment</button>
-            </div>
-
             <form class="order-form" id="order-form" novalidate>
                 <h2>Customer Information</h2>
                 <input id="full-name" type="text" name="full_name" placeholder="Full name" autocomplete="name" required>
                 <input id="email" type="email" name="email" placeholder="Email" autocomplete="email" required>
                 <input id="phone" type="tel" name="phone" placeholder="Phone Number" autocomplete="tel" inputmode="tel" required>
-                <p id="form-error" class="form-error" aria-live="polite"></p>
+
+                <h2>Service Method</h2>
+                <div class="delivery-actions" role="group" aria-label="Delivery Options">
+                    <button type="button" class="mini-btn active" data-service="Delivery">
+                        <span class="btn-icon" aria-hidden="true">&#128666;</span>
+                        <span>Deliver</span>
+                    </button>
+                    <button type="button" class="mini-btn" data-service="Pick Up">
+                        <span class="btn-icon" aria-hidden="true">&#128230;</span>
+                        <span>Pick up</span>
+                    </button>
+                </div>
 
                 <h2>Payment Method</h2>
                 <div class="payment-options" role="group" aria-label="Payment Method">
-                    <button type="button" class="pay-btn active" data-payment="GCASH">
-                        <img src="../gcash.png" alt="">
-                        <span>GCASH</span>
-                    </button>
-                    <button type="button" class="pay-btn" data-payment="MAYA">
-                        <img src="../Paymaya.png" alt="">
-                        <span>MAYA</span>
-                    </button>
-                    <button type="button" class="pay-btn" data-payment="CASH ON DELIVERY">
+                    <button type="button" class="pay-btn pay-cod" data-payment="CASH ON DELIVERY">
                         <img src="../Cod.png" alt="">
                         <span>CASH ON DELIVERY</span>
                     </button>
+                    <button type="button" class="pay-btn pay-installment" data-payment="INSTALLMENT">
+                        <span class="btn-icon" aria-hidden="true">&#128179;</span>
+                        <span>INSTALLMENT</span>
+                    </button>
+                    <button type="button" class="pay-btn pay-gcash active" data-payment="GCASH">
+                        <img src="../gcash.png" alt="">
+                        <span>GCASH</span>
+                    </button>
+                    <button type="button" class="pay-btn pay-maya" data-payment="MAYA">
+                        <img src="../Paymaya.png" alt="">
+                        <span>MAYA</span>
+                    </button>
                 </div>
+                <p id="form-error" class="form-error" aria-live="polite"></p>
             </form>
         </section>
 
@@ -505,6 +515,9 @@
             updateSummary();
         })();
     </script>
+    <script src="../../session.js"></script>
     <script src="booking.js"></script>
 </body>
 </html>
+
+

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="installment.css">
+    <script src="../../session.js" defer></script>
     <script src="installment.js" defer></script>
 </head>
 <body data-step="2">
@@ -49,7 +50,7 @@
             <ol class="stepper" aria-label="Installment steps">
                 <li class="done">
                     <span class="dot">1</span>
-                    <span class="step-copy">ID + Face Verification</span>
+                    <span class="step-copy">2x2 Picture Reminder</span>
                 </li>
                 <li class="active">
                     <span class="dot">2</span>
@@ -102,7 +103,9 @@
 
                     <label>
                         <span>Province</span>
-                        <input id="province" type="text" required>
+                        <select id="province" required>
+                            <option value="">Select province</option>
+                        </select>
                     </label>
 
                     <label>
@@ -122,7 +125,16 @@
 
                     <label>
                         <span>City / Municipality</span>
-                        <input id="city" type="text" required>
+                        <select id="city" required disabled>
+                            <option value="">Select city / municipality</option>
+                        </select>
+                    </label>
+
+                    <label>
+                        <span>Barangay</span>
+                        <select id="barangay" required disabled>
+                            <option value="">Select barangay</option>
+                        </select>
                     </label>
 
                     <label>
@@ -169,3 +181,5 @@
     </main>
 </body>
 </html>
+
+

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="adminprice.css">
+    <link rel="stylesheet" href="admin-font-tuning.css">
 </head>
 <body>
     <header class="topbar">
@@ -29,73 +30,23 @@
                 <a class="nav-btn active" href="adminprice.html">Price Management</a>
                 <a class="nav-btn" href="adminstock.html">Stocks</a>
                 <a class="nav-btn" href="adminuser.html">Users</a>
+                <a class="nav-btn" href="adminsettings.html">Settings</a>
             </nav>
 
             <a class="logout-btn" href="../log in.html">Logout</a>
         </aside>
 
         <main class="content">
-            <div class="top-actions">
-                <section class="panel title-panel">
-                    <h1>Price Management</h1>
-                </section>
-
-                <button class="panel add-btn" type="button">
-                    <span class="plus" aria-hidden="true">+</span>
-                    <span>Add Models</span>
-                </button>
-            </div>
-
-            <section class="product-grid">
-                <article class="panel product-card">
-                    <img src="../Userhomefolder/image 43.png" alt="ECONO350 MINI-II">
-                    <h3>ECONO350 MINI-II</h3>
-                    <p class="price">Price: &#8369;35,000.00 <button class="edit-btn" type="button" aria-label="Edit ECONO350 MINI-II">&#9998;</button></p>
-                </article>
-
-                <article class="panel product-card">
-                    <img src="../Userhomefolder/image 44.png" alt="ECONO 500MP">
-                    <h3>ECONO 500MP</h3>
-                    <p class="price">Price: &#8369;51,500.00 <button class="edit-btn" type="button" aria-label="Edit ECONO 500MP">&#9998;</button></p>
-                </article>
-
-                <article class="panel product-card">
-                    <img src="../Userhomefolder/image 46.png" alt="ECONO 800 MP II">
-                    <h3>ECONO 800 MP II</h3>
-                    <p class="price">Price: &#8369;67,000.00 <button class="edit-btn" type="button" aria-label="Edit ECONO 800 MP II">&#9998;</button></p>
-                </article>
-
-                <article class="panel product-card">
-                    <img src="../Userhomefolder/image 50.jpg" alt="BLITZ 1200">
-                    <h3>BLITZ 1200</h3>
-                    <p class="price">Price: &#8369;45,000.00 <button class="edit-btn" type="button" aria-label="Edit BLITZ 1200">&#9998;</button></p>
-                </article>
-
-                <article class="panel product-card">
-                    <img src="../Userhomefolder/image 59.png" alt="TRAVELER 1500">
-                    <h3>TRAVELER 1500</h3>
-                    <p class="price">Price: &#8369;78,000.00 <button class="edit-btn" type="button" aria-label="Edit TRAVELER 1500">&#9998;</button></p>
-                </article>
-
-                <article class="panel product-card">
-                    <img src="../Userhomefolder/image 56.png" alt="BLITZ 2000 ADV">
-                    <h3>BLITZ 2000 ADV</h3>
-                    <p class="price">Price: &#8369;40,000.00 <button class="edit-btn" type="button" aria-label="Edit BLITZ 2000 ADV">&#9998;</button></p>
-                </article>
-
-                <article class="panel product-card">
-                    <img src="../Userhomefolder/image 45.png" alt="ECAB 100V V2">
-                    <h3>ECAB 100V V2</h3>
-                    <p class="price">Price: &#8369;90,000.00 <button class="edit-btn" type="button" aria-label="Edit ECAB 100V V2">&#9998;</button></p>
-                </article>
-
-                <article class="panel product-card">
-                    <img src="../Userhomefolder/image 61.png" alt="ECAB 100V V2 red">
-                    <h3>ECAB 100V V2</h3>
-                    <p class="price">Price: &#8369;90,000.00 <button class="edit-btn" type="button" aria-label="Edit ECAB 100V V2 second">&#9998;</button></p>
-                </article>
+            <section class="panel title-panel">
+                <h1>Price Management</h1>
             </section>
+            <p id="price-status" class="price-status" aria-live="polite">Loading models...</p>
+            <section class="product-grid" id="product-grid" aria-live="polite"></section>
         </main>
     </div>
+    <script src="../session.js"></script>
+    <script src="adminprice.js"></script>
 </body>
 </html>
+
+

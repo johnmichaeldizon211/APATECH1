@@ -44,7 +44,7 @@ body::after {
 }
 
 .brand {
-    font-size: 30px;
+    font-size: 28px;
     font-weight: 800;
     color: #0d347f;
     letter-spacing: 0.4px;
@@ -83,7 +83,7 @@ body::after {
 .sidebar-title {
     text-align: center;
     color: var(--blue-main);
-    font-size: 35px;
+    font-size: 31px;
     font-weight: 800;
     line-height: 1.1;
 }
@@ -99,7 +99,7 @@ body::after {
     display: block;
     text-align: center;
     text-decoration: none;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
     color: #0f172a;
     background: #f8fafc;
@@ -136,6 +136,29 @@ body::after {
     align-items: center;
 }
 
+.price-status {
+    margin-top: 10px;
+    min-height: 0;
+    font-size: 12px;
+    color: #334155;
+}
+
+.price-status:empty {
+    display: none;
+}
+
+.price-status.is-success {
+    color: #0f6a2a;
+}
+
+.price-status.is-warning {
+    color: #9a6700;
+}
+
+.price-status.is-error {
+    color: #8f1d1d;
+}
+
 .title-panel {
     min-height: 60px;
     display: flex;
@@ -144,7 +167,7 @@ body::after {
 }
 
 .title-panel h1 {
-    font-size: 34px;
+    font-size: 28px;
     font-weight: 700;
     color: #111827;
 }
@@ -155,13 +178,13 @@ body::after {
     align-items: center;
     justify-content: center;
     gap: 12px;
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 600;
     cursor: pointer;
 }
 
 .plus {
-    font-size: 38px;
+    font-size: 32px;
     line-height: 1;
     font-weight: 400;
 }
@@ -196,22 +219,41 @@ body::after {
     line-height: 1.15;
 }
 
+.product-category {
+    margin-top: 2px;
+    font-size: 9px;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
 .price {
     margin-top: 3px;
     font-size: 10px;
     font-weight: 600;
     color: #0f172a;
     text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
 }
 
 .edit-btn {
     border: none;
     background: transparent;
     color: #0f2f74;
-    font-size: 11px;
+    font-size: 10px;
     cursor: pointer;
     vertical-align: middle;
     margin-left: 2px;
+}
+
+.product-card-empty {
+    align-items: center;
+    justify-content: center;
+    color: #475569;
+    font-weight: 600;
 }
 
 @media (max-width: 1100px) {
@@ -251,11 +293,11 @@ body::after {
 
 @media (max-width: 680px) {
     .brand {
-        font-size: 22px;
+        font-size: 20px;
     }
 
     .sidebar-title {
-        font-size: 26px;
+        font-size: 22px;
     }
 
     .sidebar-nav {
@@ -267,7 +309,7 @@ body::after {
     }
 
     .title-panel h1 {
-        font-size: 28px;
+        font-size: 24px;
     }
 }
 

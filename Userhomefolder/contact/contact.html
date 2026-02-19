@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -75,6 +75,8 @@
         </form>
     </section>
 
+    <script src="../../session.js"></script>
+    <script src="../chatbot-brain.js"></script>
     <script>
         (function () {
             const profileBtn = document.querySelector(".profile-menu .profile-btn");
@@ -102,6 +104,9 @@
             const chatInput = document.getElementById("chat-input");
             const chatBody = document.getElementById("chat-body");
             const chatKey = "ecodrive_chat_messages_v1";
+            const smartReply = (window.EcodriveChatbotBrain && typeof window.EcodriveChatbotBrain.createResponder === "function")
+                ? window.EcodriveChatbotBrain.createResponder()
+                : null;
             let chatMessages = [];
 
             try {
@@ -114,7 +119,7 @@
             }
 
             if (chatMessages.length === 0) {
-                chatMessages = [{ from: "bot", text: "Hello! I'm Ecodrive Bot. How can I help?" }];
+                chatMessages = [{ from: "bot", text: "Hi! I'm Ecodrive Bot. Ask me about Ecodrive ebikes, prices, booking status, payment, or repair." }];
                 localStorage.setItem(chatKey, JSON.stringify(chatMessages));
             }
 
@@ -137,12 +142,8 @@
             }
 
             function getBotReply(text) {
-                const value = text.toLowerCase();
-                if (value.includes("hello") || value.includes("hi")) return "Hi! We can help with bookings and repair concerns.";
-                if (value.includes("repair")) return "Go to Repair Booking from the menu and submit the issue details.";
-                if (value.includes("booking")) return "For product bookings, open the Bookings page from the top menu.";
-                if (value.includes("contact") || value.includes("address")) return "You can reach us via phone, email, or our Baliwag branch address.";
-                return "Thanks for your message. Our support team will contact you soon.";
+                if (smartReply) return smartReply(text);
+                return "I can help with ebike models, prices, booking status, payment, installment, delivery, and repair.";
             }
 
             function openChat() {
@@ -196,3 +197,5 @@
     </script>
 </body>
 </html>
+
+

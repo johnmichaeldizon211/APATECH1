@@ -232,6 +232,9 @@ main {
     object-fit: contain;
     image-rendering: auto;
     filter: contrast(1.08) saturate(1.08) brightness(1.02);
+    border-radius: 10px;
+    background: #ffffff;
+    padding: 4px;
 }
 
 .card-body {
@@ -246,8 +249,17 @@ main {
     letter-spacing: 0.15px;
 }
 
+.prod-info {
+    margin: 2px 0 4px;
+    min-height: 14px;
+    font-size: 10px;
+    color: #4a5d87;
+    line-height: 1.25;
+    font-weight: 500;
+}
+
 .price {
-    margin: 1px 0 6px;
+    margin: 0 0 6px;
     font-size: 11px;
     color: #2b4a85;
     font-weight: 600;
@@ -453,3 +465,4 @@ main {
         flex-wrap: wrap;
     }
 }
+

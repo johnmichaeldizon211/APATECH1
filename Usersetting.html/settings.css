@@ -342,6 +342,9 @@ body {
   margin-top: 12px;
   display: grid;
   gap: 10px;
+  max-height: 360px;
+  overflow: auto;
+  padding-right: 4px;
 }
 
 .order-item {
@@ -349,22 +352,76 @@ body {
   border-radius: 8px;
   background: #ffffff;
   padding: 10px;
+  display: grid;
+  gap: 4px;
+}
+
+.order-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .order-item h3 {
-  margin: 0 0 4px;
+  margin: 0;
   font-size: 12px;
 }
 
-.order-item p {
+.order-date {
+  font-size: 10px;
+  font-weight: 600;
+  color: #5e6f97;
+}
+
+.order-line {
   margin: 0;
   font-size: 11px;
+  color: #1e376d;
 }
 
 .order-meta {
-  margin-top: 5px !important;
-  color: #2349a8;
+  margin-top: 6px !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 10px;
   font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.status-chip.pending {
+  background: #eef3ff;
+  color: #1f3f8d;
+  border-color: #cad8ff;
+}
+
+.status-chip.approved,
+.status-chip.completed {
+  background: #e8f8ee;
+  color: #1e7c35;
+  border-color: #bee7ca;
+}
+
+.status-chip.rejected,
+.status-chip.cancelled {
+  background: #fff0f0;
+  color: #b13232;
+  border-color: #f5c3c3;
+}
+
+.fulfillment-text {
+  font-size: 10px;
+  font-weight: 700;
+  color: #274a9f;
 }
 
 .about-section {

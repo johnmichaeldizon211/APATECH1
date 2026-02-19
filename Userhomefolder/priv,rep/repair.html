@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -49,8 +49,35 @@
                         <label for="repair-email">Email</label>
                         <input id="repair-email" name="email" type="email" placeholder="Enter your email" required>
 
+                        <label for="repair-phone">Phone Number</label>
+                        <input id="repair-phone" name="phone" type="tel" placeholder="09XXXXXXXXX" required>
+
                         <label for="repair-vehicle">Type of Vehicle</label>
-                        <input id="repair-vehicle" name="vehicle" type="text" placeholder="Vehicle type" required>
+                        <select id="repair-vehicle" name="vehicle" required>
+                            <option value="">Select e-bike model</option>
+                            <optgroup label="2-Wheel">
+                                <option value="BLITZ 2000">BLITZ 2000</option>
+                                <option value="BLITZ 1200">BLITZ 1200</option>
+                                <option value="FUN 1500 FI">FUN 1500 FI</option>
+                                <option value="CANDY 800">CANDY 800</option>
+                                <option value="BLITZ 200R">BLITZ 200R</option>
+                                <option value="TRAVELLER 1500">TRAVELLER 1500</option>
+                                <option value="ECONO 500 MP">ECONO 500 MP</option>
+                                <option value="ECONO 350 MINI-II">ECONO 350 MINI-II</option>
+                            </optgroup>
+                            <optgroup label="3-Wheel">
+                                <option value="ECARGO 100">ECARGO 100</option>
+                                <option value="ECONO 650 MP">ECONO 650 MP</option>
+                                <option value="ECAB 100V V2">ECAB 100V V2</option>
+                                <option value="ECONO 800 MP II">ECONO 800 MP II</option>
+                            </optgroup>
+                            <optgroup label="4-Wheel">
+                                <option value="E-CARGO 800">E-CARGO 800</option>
+                                <option value="E-CAB MAX 1500">E-CAB MAX 1500</option>
+                                <option value="E-CAB 1000">E-CAB 1000</option>
+                                <option value="ECONO 800 MP">ECONO 800 MP</option>
+                            </optgroup>
+                        </select>
 
                         <div class="date-time-row">
                             <div class="input-col">
@@ -108,13 +135,26 @@
         </form>
     </section>
 
+    <script src="../../session.js"></script>
+    <script src="../chatbot-brain.js"></script>
     <script>
         (function () {
             const profileBtn = document.querySelector('.profile-btn');
             const dropdown = document.querySelector('.dropdown');
             const form = document.getElementById('repair-form');
             const message = document.getElementById('repair-message');
+            const nameInput = document.getElementById('repair-name');
+            const emailInput = document.getElementById('repair-email');
+            const phoneInput = document.getElementById('repair-phone');
             const currentUserKey = 'ecodrive_current_user_email';
+            const usersKey = 'users';
+            const repairStorageKey = 'ecodrive_repair_bookings';
+            const bookingStorageKeys = ['ecodrive_bookings', 'ecodrive_orders', 'orders'];
+            const API_BASE = String(
+                localStorage.getItem('ecodrive_api_base') ||
+                localStorage.getItem('ecodrive_kyc_api_base') ||
+                'http://127.0.0.1:5050'
+            ).trim().replace(/\/+$/, '');
 
             if (profileBtn && dropdown) {
                 profileBtn.addEventListener('click', function (event) {
@@ -131,26 +171,156 @@
                 });
             }
 
+            function safeParse(raw) {
+                try {
+                    return JSON.parse(raw);
+                } catch (_error) {
+                    return null;
+                }
+            }
+
+            function getApiUrl(path) {
+                return API_BASE ? API_BASE + path : path;
+            }
+
+            function normalizePhoneValue(phone) {
+                const cleaned = String(phone || '').trim().replace(/[\s-]/g, '');
+                if (/^\+639\d{9}$/.test(cleaned)) {
+                    return '0' + cleaned.slice(3);
+                }
+                if (/^639\d{9}$/.test(cleaned)) {
+                    return '0' + cleaned.slice(2);
+                }
+                return cleaned;
+            }
+
+            function isValidEmail(email) {
+                return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
+            }
+
+            function isValidPhone(phone) {
+                return /^09\d{9}$/.test(String(phone || '').trim());
+            }
+
             function getCurrentUserEmail() {
                 const localEmail = (localStorage.getItem(currentUserKey) || '').trim().toLowerCase();
-                if (localEmail) return localEmail;
+                if (localEmail) {
+                    return localEmail;
+                }
                 return (sessionStorage.getItem(currentUserKey) || '').trim().toLowerCase();
             }
 
-            function saveRepairBooking(record) {
-                let list = [];
-                try {
-                    const parsed = JSON.parse(localStorage.getItem('ecodrive_repair_bookings') || '[]');
-                    if (Array.isArray(parsed)) {
-                        list = parsed;
-                    }
-                } catch (_error) {
-                    list = [];
+            function getProfileStorageKey(emailValue) {
+                const email = String(emailValue || '').trim().toLowerCase();
+                return email ? 'ecodrive_profile_settings::' + email : 'ecodrive_profile_settings';
+            }
+
+            function getUsers() {
+                const parsed = safeParse(localStorage.getItem(usersKey));
+                return Array.isArray(parsed) ? parsed : [];
+            }
+
+            function getCurrentUserFromUsers(emailValue) {
+                const email = String(emailValue || '').trim().toLowerCase();
+                if (!email) {
+                    return null;
                 }
 
+                const users = getUsers();
+                return users.find(function (user) {
+                    return String((user && user.email) || '').trim().toLowerCase() === email;
+                }) || null;
+            }
+
+            function buildNameFromUser(user) {
+                if (!user || typeof user !== 'object') {
+                    return '';
+                }
+
+                if (user.name) {
+                    return String(user.name).trim();
+                }
+
+                const first = String(user.firstName || '').trim();
+                const middle = String(user.middleInitial || '').trim();
+                const last = String(user.lastName || '').trim();
+                const middleWithDot = middle ? middle.replace(/\.+$/, '') + '.' : '';
+                return [first, middleWithDot, last].filter(Boolean).join(' ').trim();
+            }
+
+            function getCurrentUserProfile() {
+                const currentEmail = getCurrentUserEmail();
+                const user = getCurrentUserFromUsers(currentEmail);
+                const scopedProfile = safeParse(localStorage.getItem(getProfileStorageKey(currentEmail)));
+                const legacyProfile = safeParse(localStorage.getItem('ecodrive_profile_settings'));
+                const profile = (scopedProfile && typeof scopedProfile === 'object')
+                    ? scopedProfile
+                    : ((legacyProfile && typeof legacyProfile === 'object') ? legacyProfile : {});
+
+                return {
+                    fullName: String(profile.fullName || profile.name || buildNameFromUser(user) || '').trim(),
+                    email: String(profile.email || (user && user.email) || currentEmail || '').trim().toLowerCase(),
+                    phone: normalizePhoneValue(profile.phone || (user && user.phone) || '')
+                };
+            }
+
+            function seedUserDefaults() {
+                const profile = getCurrentUserProfile();
+                if (nameInput && profile.fullName && !nameInput.value) {
+                    nameInput.value = profile.fullName;
+                }
+                if (emailInput && profile.email && !emailInput.value) {
+                    emailInput.value = profile.email;
+                }
+                if (phoneInput && profile.phone && !phoneInput.value) {
+                    phoneInput.value = profile.phone;
+                }
+            }
+
+            function appendRecordToStorage(storageKey, record) {
+                const parsed = safeParse(localStorage.getItem(storageKey));
+                const list = Array.isArray(parsed) ? parsed : [];
                 list.push(record);
-                localStorage.setItem('ecodrive_repair_bookings', JSON.stringify(list));
+                localStorage.setItem(storageKey, JSON.stringify(list));
+            }
+
+            async function saveBookingToApi(record) {
+                try {
+                    const response = await fetch(getApiUrl('/api/bookings'), {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(record)
+                    });
+
+                    if (response.status === 404 || response.status === 405) {
+                        return false;
+                    }
+
+                    const payload = await response.json().catch(function () {
+                        return {};
+                    });
+                    return response.ok && payload && payload.success === true;
+                } catch (_error) {
+                    return false;
+                }
+            }
+
+            async function saveRepairBooking(record) {
+                const apiSaved = await saveBookingToApi(record);
+
+                appendRecordToStorage(repairStorageKey, record);
                 localStorage.setItem('latestRepairBooking', JSON.stringify(record));
+
+                if (apiSaved) {
+                    return;
+                }
+
+                bookingStorageKeys.forEach(function (key) {
+                    appendRecordToStorage(key, record);
+                });
+                localStorage.setItem('latestBooking', JSON.stringify(record));
             }
 
             function setMessage(text, isError) {
@@ -160,37 +330,64 @@
             }
 
             if (form) {
-                form.addEventListener('submit', function (event) {
+                form.addEventListener('submit', async function (event) {
                     event.preventDefault();
                     setMessage('', false);
 
                     const formData = new FormData(form);
+                    const normalizedPhone = normalizePhoneValue(formData.get('phone'));
+                    const recordId = 'REP-' + Date.now();
+                    const accountEmail = getCurrentUserEmail();
+                    const formEmail = String(formData.get('email') || '').trim().toLowerCase();
+                    const bookingEmail = accountEmail || formEmail;
                     const payload = {
-                        id: 'REP-' + Date.now(),
+                        orderId: recordId,
+                        id: recordId,
+                        fullName: String(formData.get('name') || '').trim(),
                         name: String(formData.get('name') || '').trim(),
-                        email: String(formData.get('email') || '').trim().toLowerCase(),
+                        email: bookingEmail,
+                        phone: normalizedPhone,
+                        model: String(formData.get('vehicle') || '').trim(),
                         vehicle: String(formData.get('vehicle') || '').trim(),
+                        appointmentDate: String(formData.get('date') || '').trim(),
+                        appointmentTime: String(formData.get('time') || '').trim(),
                         date: String(formData.get('date') || '').trim(),
                         time: String(formData.get('time') || '').trim(),
                         service: String(formData.get('service') || 'Walk in').trim(),
+                        payment: 'REPAIR',
+                        subtotal: 0,
+                        shippingFee: 0,
+                        total: 0,
                         details: String(formData.get('details') || '').trim(),
-                        userEmail: getCurrentUserEmail(),
+                        userEmail: accountEmail || bookingEmail,
                         status: 'Pending review',
+                        fulfillmentStatus: 'Awaiting Inspection',
                         createdAt: new Date().toISOString()
                     };
 
-                    if (!payload.name || !payload.email || !payload.vehicle || !payload.date || !payload.time || !payload.details) {
+                    if (!payload.fullName || !payload.email || !payload.phone || !payload.model || !payload.date || !payload.time || !payload.details) {
                         setMessage('Please complete all required fields.', true);
                         return;
                     }
+                    if (!isValidEmail(payload.email)) {
+                        setMessage('Please enter a valid email address.', true);
+                        return;
+                    }
+                    if (!isValidPhone(payload.phone)) {
+                        setMessage('Please enter a valid phone number (09XXXXXXXXX).', true);
+                        return;
+                    }
 
-                    saveRepairBooking(payload);
+                    await saveRepairBooking(payload);
                     form.reset();
                     const defaultService = form.querySelector('input[name="service"][value="Walk in"]');
                     if (defaultService) defaultService.checked = true;
+                    seedUserDefaults();
                     setMessage('Repair booking submitted successfully.', false);
                 });
             }
+
+            seedUserDefaults();
 
             const botToggle = document.getElementById('chatbot-toggle');
             const chatPanel = document.getElementById('chat-panel');
@@ -199,6 +396,9 @@
             const chatInput = document.getElementById('chat-input');
             const chatBody = document.getElementById('chat-body');
             const chatKey = 'ecodrive_chat_messages_v1';
+            const smartReply = (window.EcodriveChatbotBrain && typeof window.EcodriveChatbotBrain.createResponder === 'function')
+                ? window.EcodriveChatbotBrain.createResponder()
+                : null;
             let chatMessages = [];
 
             try {
@@ -209,7 +409,7 @@
             }
 
             if (chatMessages.length === 0) {
-                chatMessages = [{ from: 'bot', text: "Hello! I'm Ecodrive Bot. How can I help?" }];
+                chatMessages = [{ from: 'bot', text: "Hi! I'm Ecodrive Bot. Ask me about Ecodrive ebikes, prices, booking status, payment, or repair." }];
                 localStorage.setItem(chatKey, JSON.stringify(chatMessages));
             }
 
@@ -244,11 +444,8 @@
             }
 
             function getBotReply(text) {
-                const value = text.toLowerCase();
-                if (value.includes('hello') || value.includes('hi')) return 'Hi! We can help with bookings and repair concerns.';
-                if (value.includes('repair')) return 'You can use this form and include your issue details. We will review it quickly.';
-                if (value.includes('booking')) return 'For product bookings, open the Bookings page from the top menu.';
-                return 'Thanks for your message. Our support team will contact you soon.';
+                if (smartReply) return smartReply(text);
+                return 'I can help with ebike models, prices, booking status, payment, installment, delivery, and repair.';
             }
 
             if (botToggle) {
@@ -282,3 +479,5 @@
     </script>
 </body>
 </html>
+
+

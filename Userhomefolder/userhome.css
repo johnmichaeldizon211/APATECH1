@@ -252,6 +252,7 @@ body {
     object-position: center;
     border-radius: 12px;
     background: #fff;
+    padding: 4px;
     margin: 0 auto;
     flex-shrink: 0;
 }
@@ -757,3 +758,4 @@ footer {
         font-size: 13px;
     }
 }
+
