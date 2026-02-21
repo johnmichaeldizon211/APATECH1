@@ -54,7 +54,8 @@ try {
     mysql = null;
 }
 
-const PORT = process.env.KYC_PORT ? Number(process.env.KYC_PORT) : 5050;
+const RAW_PORT = Number(process.env.PORT || process.env.KYC_PORT || "");
+const PORT = (Number.isFinite(RAW_PORT) && RAW_PORT > 0) ? RAW_PORT : 5050;
 const PUBLIC_API_BASE = String(process.env.PUBLIC_API_BASE || "").trim().replace(/\/+$/, "");
 
 const OTP_TTL_MS = 5 * 60 * 1000;
@@ -74,12 +75,44 @@ const DEFAULT_ADMIN_PASSWORD = String(process.env.ADMIN_PASSWORD || "echodrivead
 const ADMIN_CREDENTIALS_PATH = path.join(__dirname, "admin-credentials.json");
 let adminCredentialsCache = null;
 
-const DB_HOST = String(process.env.DB_HOST || "127.0.0.1").trim();
-const DB_PORT = Number(process.env.DB_PORT || "3306");
-const DB_USER = String(process.env.DB_USER || "root").trim();
-const DB_PASSWORD = String(process.env.DB_PASSWORD || "").trim();
-const DB_NAME = String(process.env.DB_NAME || "ecodrive_db").trim();
+const MYSQL_URL = String(process.env.MYSQL_URL || process.env.DATABASE_URL || "").trim();
+let DB_HOST = String(process.env.DB_HOST || "127.0.0.1").trim();
+let DB_PORT = Number(process.env.DB_PORT || "3306");
+let DB_USER = String(process.env.DB_USER || "root").trim();
+let DB_PASSWORD = String(process.env.DB_PASSWORD || "").trim();
+let DB_NAME = String(process.env.DB_NAME || "ecodrive_db").trim();
+const DB_SSL_MODE = String(process.env.DB_SSL || "").trim().toLowerCase();
+const DB_SSL_REJECT_UNAUTHORIZED = String(process.env.DB_SSL_REJECT_UNAUTHORIZED || "true")
+    .trim()
+    .toLowerCase() !== "false";
 let dbPool = null;
+
+if (MYSQL_URL) {
+    try {
+        const parsedDbUrl = new URL(MYSQL_URL);
+        if (parsedDbUrl.hostname) {
+            DB_HOST = parsedDbUrl.hostname;
+        }
+        if (parsedDbUrl.port) {
+            const parsedPort = Number(parsedDbUrl.port);
+            if (Number.isFinite(parsedPort) && parsedPort > 0) {
+                DB_PORT = parsedPort;
+            }
+        }
+        if (parsedDbUrl.username) {
+            DB_USER = decodeURIComponent(parsedDbUrl.username);
+        }
+        if (parsedDbUrl.password) {
+            DB_PASSWORD = decodeURIComponent(parsedDbUrl.password);
+        }
+        const dbNameFromPath = String(parsedDbUrl.pathname || "").replace(/^\/+/, "").trim();
+        if (dbNameFromPath) {
+            DB_NAME = dbNameFromPath;
+        }
+    } catch (error) {
+        console.warn("[db-config] Invalid MYSQL_URL/DATABASE_URL:", error && error.message ? error.message : error);
+    }
+}
 
 const SMTP_HOST = String(process.env.SMTP_HOST || "").trim();
 const SMTP_PORT = Number(process.env.SMTP_PORT || "587");
@@ -300,6 +333,25 @@ function createDefaultAdminCredentials() {
     };
 }
 
+function getEnvAdminCredentials() {
+    const loginIdRaw = String(process.env.ADMIN_LOGIN_ID || "").trim();
+    const passwordRaw = String(process.env.ADMIN_PASSWORD || "");
+    if (!loginIdRaw || !passwordRaw) {
+        return null;
+    }
+
+    const loginId = normalizeAdminLoginId(loginIdRaw);
+    if (!isValidAdminLoginId(loginId)) {
+        return null;
+    }
+
+    return {
+        loginId: loginId,
+        passwordHash: hashPassword(passwordRaw),
+        updatedAt: new Date().toISOString()
+    };
+}
+
 function readAdminCredentialsFromDisk() {
     if (!fs.existsSync(ADMIN_CREDENTIALS_PATH)) {
         return null;
@@ -329,6 +381,12 @@ function writeAdminCredentialsToDisk(credentialsInput) {
 
 function getAdminCredentials() {
     if (adminCredentialsCache) {
+        return adminCredentialsCache;
+    }
+
+    const fromEnv = getEnvAdminCredentials();
+    if (fromEnv) {
+        adminCredentialsCache = fromEnv;
         return adminCredentialsCache;
     }
 
@@ -512,6 +570,28 @@ function isDbConfigured() {
     return Boolean(mysql && DB_HOST && Number.isFinite(DB_PORT) && DB_PORT > 0 && DB_USER && DB_NAME);
 }
 
+async function hasColumn(pool, tableName, columnName) {
+    const [rows] = await pool.execute(
+        `SELECT 1
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = ?
+           AND COLUMN_NAME = ?
+         LIMIT 1`,
+        [tableName, columnName]
+    );
+    return Array.isArray(rows) && rows.length > 0;
+}
+
+function getDbSslConfig() {
+    if (!DB_SSL_MODE || DB_SSL_MODE === "false" || DB_SSL_MODE === "0" || DB_SSL_MODE === "off") {
+        return undefined;
+    }
+    return {
+        rejectUnauthorized: DB_SSL_REJECT_UNAUTHORIZED
+    };
+}
+
 async function getDbPool() {
     if (!mysql) {
         throw new Error("Missing mysql2 package. Run: npm install mysql2");
@@ -529,6 +609,7 @@ async function getDbPool() {
         user: DB_USER,
         password: DB_PASSWORD,
         database: DB_NAME,
+        ssl: getDbSslConfig(),
         waitForConnections: true,
         connectionLimit: 10,
         queueLimit: 0
@@ -543,10 +624,38 @@ async function ensureDbSchema() {
 
     try {
         const pool = await getDbPool();
+        await pool.execute(
+            `CREATE TABLE IF NOT EXISTS users (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                first_name VARCHAR(80) NOT NULL,
+                middle_initial VARCHAR(3) NULL,
+                last_name VARCHAR(80) NOT NULL,
+                full_name VARCHAR(200) NOT NULL,
+                email VARCHAR(190) NOT NULL,
+                phone VARCHAR(20) NOT NULL,
+                address VARCHAR(255) NOT NULL,
+                avatar_data_url MEDIUMTEXT NULL,
+                password_hash VARCHAR(255) NOT NULL,
+                role ENUM('user', 'admin') NOT NULL DEFAULT 'user',
+                is_blocked TINYINT(1) NOT NULL DEFAULT 0,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                last_login_at TIMESTAMP NULL DEFAULT NULL,
+                PRIMARY KEY (id),
+                UNIQUE KEY uq_users_email (email),
+                UNIQUE KEY uq_users_phone (phone),
+                KEY idx_users_role_blocked (role, is_blocked),
+                KEY idx_users_created_at (created_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+        );
+
         try {
-            await pool.execute(
-                "ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_data_url MEDIUMTEXT NULL AFTER address"
-            );
+            const usersHasAvatar = await hasColumn(pool, "users", "avatar_data_url");
+            if (!usersHasAvatar) {
+                await pool.execute(
+                    "ALTER TABLE users ADD COLUMN avatar_data_url MEDIUMTEXT NULL AFTER address"
+                );
+            }
         } catch (alterError) {
             console.warn("[db-schema] Unable to add users.avatar_data_url automatically:", alterError.message || alterError);
         }
@@ -608,9 +717,12 @@ async function ensureDbSchema() {
         );
 
         try {
-            await pool.execute(
-                "ALTER TABLE products ADD COLUMN IF NOT EXISTS product_info VARCHAR(255) NULL AFTER category"
-            );
+            const productsHasInfo = await hasColumn(pool, "products", "product_info");
+            if (!productsHasInfo) {
+                await pool.execute(
+                    "ALTER TABLE products ADD COLUMN product_info VARCHAR(255) NULL AFTER category"
+                );
+            }
         } catch (alterError) {
             console.warn("[db-schema] Unable to add products.product_info automatically:", alterError.message || alterError);
         }
