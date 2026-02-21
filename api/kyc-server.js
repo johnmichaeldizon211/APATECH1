@@ -728,6 +728,50 @@ async function ensureDbSchema() {
         }
 
         try {
+            const productsHasDetailUrl = await hasColumn(pool, "products", "detail_url");
+            if (!productsHasDetailUrl) {
+                await pool.execute(
+                    "ALTER TABLE products ADD COLUMN detail_url VARCHAR(255) NULL"
+                );
+            }
+        } catch (alterError) {
+            console.warn("[db-schema] Unable to add products.detail_url automatically:", alterError.message || alterError);
+        }
+
+        try {
+            const productsHasIsActive = await hasColumn(pool, "products", "is_active");
+            if (!productsHasIsActive) {
+                await pool.execute(
+                    "ALTER TABLE products ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1"
+                );
+            }
+        } catch (alterError) {
+            console.warn("[db-schema] Unable to add products.is_active automatically:", alterError.message || alterError);
+        }
+
+        try {
+            const productsHasCreatedAt = await hasColumn(pool, "products", "created_at");
+            if (!productsHasCreatedAt) {
+                await pool.execute(
+                    "ALTER TABLE products ADD COLUMN created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP"
+                );
+            }
+        } catch (alterError) {
+            console.warn("[db-schema] Unable to add products.created_at automatically:", alterError.message || alterError);
+        }
+
+        try {
+            const productsHasUpdatedAt = await hasColumn(pool, "products", "updated_at");
+            if (!productsHasUpdatedAt) {
+                await pool.execute(
+                    "ALTER TABLE products ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+                );
+            }
+        } catch (alterError) {
+            console.warn("[db-schema] Unable to add products.updated_at automatically:", alterError.message || alterError);
+        }
+
+        try {
             await pool.execute(
                 "ALTER TABLE products MODIFY COLUMN image_url MEDIUMTEXT NULL"
             );
@@ -1372,157 +1416,217 @@ async function handleAdminDashboard(_req, res) {
         }
 
         const pool = await getDbPool();
+        let bookingStatsRows = [{
+            totalBookings: 0,
+            grossSales: 0,
+            totalSales: 0,
+            pendingBookings: 0,
+            approvedBookings: 0,
+            rejectedBookings: 0,
+            cancelledBookings: 0,
+            successfulBookings: 0
+        }];
 
-        const [bookingStatsRows] = await pool.execute(
-            `SELECT
-                COUNT(*) AS totalBookings,
-                COALESCE(SUM(total), 0) AS grossSales,
-                COALESCE(SUM(
-                    CASE
-                        WHEN (
-                            review_decision = 'approved'
-                            OR LOWER(status) LIKE '%approve%'
-                            OR LOWER(status) LIKE '%complete%'
-                            OR LOWER(status) LIKE '%deliver%'
-                        )
-                        AND LOWER(status) NOT LIKE '%cancel%'
-                        AND LOWER(fulfillment_status) NOT LIKE '%cancel%'
-                        THEN total
-                        ELSE 0
-                    END
-                ), 0) AS totalSales,
-                COALESCE(SUM(
-                    CASE
-                        WHEN review_decision = 'none'
+        try {
+            const [rows] = await pool.execute(
+                `SELECT
+                    COUNT(*) AS totalBookings,
+                    COALESCE(SUM(total), 0) AS grossSales,
+                    COALESCE(SUM(
+                        CASE
+                            WHEN (
+                                review_decision = 'approved'
+                                OR LOWER(status) LIKE '%approve%'
+                                OR LOWER(status) LIKE '%complete%'
+                                OR LOWER(status) LIKE '%deliver%'
+                            )
                             AND LOWER(status) NOT LIKE '%cancel%'
                             AND LOWER(fulfillment_status) NOT LIKE '%cancel%'
-                            AND LOWER(status) NOT LIKE '%reject%'
-                            AND LOWER(status) NOT LIKE '%approve%'
-                            AND LOWER(status) NOT LIKE '%complete%'
-                            AND LOWER(status) NOT LIKE '%deliver%'
-                        THEN 1
-                        ELSE 0
-                    END
-                ), 0) AS pendingBookings,
-                COALESCE(SUM(
-                    CASE
-                        WHEN (
-                            review_decision = 'approved'
-                            OR LOWER(status) LIKE '%approve%'
-                            OR LOWER(status) LIKE '%complete%'
-                            OR LOWER(status) LIKE '%deliver%'
-                        )
-                        AND LOWER(status) NOT LIKE '%cancel%'
-                        AND LOWER(fulfillment_status) NOT LIKE '%cancel%'
-                        THEN 1
-                        ELSE 0
-                    END
-                ), 0) AS approvedBookings,
-                COALESCE(SUM(
-                    CASE
-                        WHEN (
-                            review_decision = 'rejected'
-                            OR LOWER(status) LIKE '%reject%'
-                            OR LOWER(status) LIKE '%cancel%'
-                            OR LOWER(fulfillment_status) LIKE '%cancel%'
-                        )
-                        THEN 1
-                        ELSE 0
-                    END
-                ), 0) AS rejectedBookings,
-                COALESCE(SUM(
-                    CASE
-                        WHEN LOWER(status) LIKE '%cancel%'
-                            OR LOWER(fulfillment_status) LIKE '%cancel%'
-                        THEN 1
-                        ELSE 0
-                    END
-                ), 0) AS cancelledBookings,
-                COALESCE(SUM(
-                    CASE
-                        WHEN (
-                            review_decision = 'approved'
-                            OR LOWER(status) LIKE '%approve%'
-                            OR LOWER(status) LIKE '%complete%'
-                            OR LOWER(status) LIKE '%deliver%'
-                        )
-                        AND LOWER(status) NOT LIKE '%cancel%'
-                        AND LOWER(fulfillment_status) NOT LIKE '%cancel%'
-                        THEN 1
-                        ELSE 0
-                    END
-                ), 0) AS successfulBookings
-             FROM bookings`
-        );
-
-        const [userStatsRows] = await pool.execute(
-            `SELECT COUNT(*) AS totalUsers
-             FROM users
-             WHERE role = 'user'`
-        );
-
-        const [monthlyRows] = await pool.execute(
-            `SELECT
-                DATE_FORMAT(created_at, '%Y-%m-01') AS month_key,
-                COALESCE(SUM(
-                    CASE
-                        WHEN (
-                            review_decision = 'approved'
-                            OR LOWER(status) LIKE '%approve%'
-                            OR LOWER(status) LIKE '%complete%'
-                            OR LOWER(status) LIKE '%deliver%'
-                        )
-                        AND LOWER(status) NOT LIKE '%cancel%'
-                        AND LOWER(fulfillment_status) NOT LIKE '%cancel%'
-                        THEN total
-                        ELSE 0
-                    END
-                ), 0) AS sales,
-                COUNT(*) AS bookings,
-                COALESCE(SUM(
-                    CASE
-                        WHEN (
-                            review_decision = 'approved'
-                            OR LOWER(status) LIKE '%approve%'
-                            OR LOWER(status) LIKE '%complete%'
-                            OR LOWER(status) LIKE '%deliver%'
-                        )
-                        AND LOWER(status) NOT LIKE '%cancel%'
-                        AND LOWER(fulfillment_status) NOT LIKE '%cancel%'
-                        THEN 1
-                        ELSE 0
-                    END
-                ), 0) AS approved,
-                COALESCE(SUM(
-                    CASE
-                        WHEN (
-                            review_decision = 'rejected'
-                            OR LOWER(status) LIKE '%reject%'
-                            OR LOWER(status) LIKE '%cancel%'
-                            OR LOWER(fulfillment_status) LIKE '%cancel%'
-                        )
-                        THEN 1
-                        ELSE 0
-                    END
-                ), 0) AS rejected,
-                COALESCE(SUM(
-                    CASE
-                        WHEN review_decision = 'none'
+                            THEN total
+                            ELSE 0
+                        END
+                    ), 0) AS totalSales,
+                    COALESCE(SUM(
+                        CASE
+                            WHEN review_decision = 'none'
+                                AND LOWER(status) NOT LIKE '%cancel%'
+                                AND LOWER(fulfillment_status) NOT LIKE '%cancel%'
+                                AND LOWER(status) NOT LIKE '%reject%'
+                                AND LOWER(status) NOT LIKE '%approve%'
+                                AND LOWER(status) NOT LIKE '%complete%'
+                                AND LOWER(status) NOT LIKE '%deliver%'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ), 0) AS pendingBookings,
+                    COALESCE(SUM(
+                        CASE
+                            WHEN (
+                                review_decision = 'approved'
+                                OR LOWER(status) LIKE '%approve%'
+                                OR LOWER(status) LIKE '%complete%'
+                                OR LOWER(status) LIKE '%deliver%'
+                            )
                             AND LOWER(status) NOT LIKE '%cancel%'
                             AND LOWER(fulfillment_status) NOT LIKE '%cancel%'
-                            AND LOWER(status) NOT LIKE '%reject%'
-                            AND LOWER(status) NOT LIKE '%approve%'
-                            AND LOWER(status) NOT LIKE '%complete%'
-                            AND LOWER(status) NOT LIKE '%deliver%'
-                        THEN 1
-                        ELSE 0
-                    END
-                ), 0) AS pending
-             FROM bookings
-             WHERE created_at >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 11 MONTH), '%Y-%m-01')
-             GROUP BY month_key
-             ORDER BY month_key ASC`
-        );
+                            THEN 1
+                            ELSE 0
+                        END
+                    ), 0) AS approvedBookings,
+                    COALESCE(SUM(
+                        CASE
+                            WHEN (
+                                review_decision = 'rejected'
+                                OR LOWER(status) LIKE '%reject%'
+                                OR LOWER(status) LIKE '%cancel%'
+                                OR LOWER(fulfillment_status) LIKE '%cancel%'
+                            )
+                            THEN 1
+                            ELSE 0
+                        END
+                    ), 0) AS rejectedBookings,
+                    COALESCE(SUM(
+                        CASE
+                            WHEN LOWER(status) LIKE '%cancel%'
+                                OR LOWER(fulfillment_status) LIKE '%cancel%'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ), 0) AS cancelledBookings,
+                    COALESCE(SUM(
+                        CASE
+                            WHEN (
+                                review_decision = 'approved'
+                                OR LOWER(status) LIKE '%approve%'
+                                OR LOWER(status) LIKE '%complete%'
+                                OR LOWER(status) LIKE '%deliver%'
+                            )
+                            AND LOWER(status) NOT LIKE '%cancel%'
+                            AND LOWER(fulfillment_status) NOT LIKE '%cancel%'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ), 0) AS successfulBookings
+                 FROM bookings`
+            );
+            if (Array.isArray(rows) && rows.length > 0) {
+                bookingStatsRows = rows;
+            }
+        } catch (statsError) {
+            console.warn("[admin-dashboard] Falling back to basic booking stats:", statsError.message || statsError);
+            try {
+                const [fallbackRows] = await pool.execute(
+                    `SELECT
+                        COUNT(*) AS totalBookings,
+                        COALESCE(SUM(total), 0) AS grossSales,
+                        0 AS totalSales,
+                        0 AS pendingBookings,
+                        0 AS approvedBookings,
+                        0 AS rejectedBookings,
+                        0 AS cancelledBookings,
+                        0 AS successfulBookings
+                     FROM bookings`
+                );
+                if (Array.isArray(fallbackRows) && fallbackRows.length > 0) {
+                    bookingStatsRows = fallbackRows;
+                }
+            } catch (_fallbackError) {
+                // Keep zero defaults.
+            }
+        }
+
+        let userStatsRows = [{ totalUsers: 0 }];
+        try {
+            const [rows] = await pool.execute(
+                `SELECT COUNT(*) AS totalUsers
+                 FROM users
+                 WHERE role = 'user'`
+            );
+            if (Array.isArray(rows) && rows.length > 0) {
+                userStatsRows = rows;
+            }
+        } catch (usersError) {
+            console.warn("[admin-dashboard] Falling back to total user count:", usersError.message || usersError);
+            try {
+                const [fallbackRows] = await pool.execute("SELECT COUNT(*) AS totalUsers FROM users");
+                if (Array.isArray(fallbackRows) && fallbackRows.length > 0) {
+                    userStatsRows = fallbackRows;
+                }
+            } catch (_fallbackError) {
+                // Keep zero defaults.
+            }
+        }
+
+        let monthlyRows = [];
+        try {
+            const [rows] = await pool.execute(
+                `SELECT
+                    DATE_FORMAT(created_at, '%Y-%m-01') AS month_key,
+                    COALESCE(SUM(
+                        CASE
+                            WHEN (
+                                review_decision = 'approved'
+                                OR LOWER(status) LIKE '%approve%'
+                                OR LOWER(status) LIKE '%complete%'
+                                OR LOWER(status) LIKE '%deliver%'
+                            )
+                            AND LOWER(status) NOT LIKE '%cancel%'
+                            AND LOWER(fulfillment_status) NOT LIKE '%cancel%'
+                            THEN total
+                            ELSE 0
+                        END
+                    ), 0) AS sales,
+                    COUNT(*) AS bookings,
+                    COALESCE(SUM(
+                        CASE
+                            WHEN (
+                                review_decision = 'approved'
+                                OR LOWER(status) LIKE '%approve%'
+                                OR LOWER(status) LIKE '%complete%'
+                                OR LOWER(status) LIKE '%deliver%'
+                            )
+                            AND LOWER(status) NOT LIKE '%cancel%'
+                            AND LOWER(fulfillment_status) NOT LIKE '%cancel%'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ), 0) AS approved,
+                    COALESCE(SUM(
+                        CASE
+                            WHEN (
+                                review_decision = 'rejected'
+                                OR LOWER(status) LIKE '%reject%'
+                                OR LOWER(status) LIKE '%cancel%'
+                                OR LOWER(fulfillment_status) LIKE '%cancel%'
+                            )
+                            THEN 1
+                            ELSE 0
+                        END
+                    ), 0) AS rejected,
+                    COALESCE(SUM(
+                        CASE
+                            WHEN review_decision = 'none'
+                                AND LOWER(status) NOT LIKE '%cancel%'
+                                AND LOWER(fulfillment_status) NOT LIKE '%cancel%'
+                                AND LOWER(status) NOT LIKE '%reject%'
+                                AND LOWER(status) NOT LIKE '%approve%'
+                                AND LOWER(status) NOT LIKE '%complete%'
+                                AND LOWER(status) NOT LIKE '%deliver%'
+                            THEN 1
+                            ELSE 0
+                        END
+                    ), 0) AS pending
+                 FROM bookings
+                 WHERE created_at >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 11 MONTH), '%Y-%m-01')
+                 GROUP BY month_key
+                 ORDER BY month_key ASC`
+            );
+            if (Array.isArray(rows)) {
+                monthlyRows = rows;
+            }
+        } catch (monthlyError) {
+            console.warn("[admin-dashboard] Falling back to empty monthly sales overview:", monthlyError.message || monthlyError);
+        }
 
         const bookingStats = bookingStatsRows && bookingStatsRows[0] ? bookingStatsRows[0] : {};
         const userStats = userStatsRows && userStatsRows[0] ? userStatsRows[0] : {};
